@@ -1,0 +1,270 @@
+Update the existing NewsSA website project without redesigning the overall visual identity. The goal is to refine the header/navigation and prepare the React application for a fully headless WordPress content architecture.
+
+### 1. Header / Logo Alignment
+
+Refine the existing website header so that the **NewsSA logo and the “NewsSA” text are visually centered together**.
+
+* Place the NewsSA logo icon/mark and the “NewsSA” wordmark directly together.
+* Align the logo and text vertically so they appear as one cohesive brand lockup.
+* The combined logo + “NewsSA” text should sit **centrally within the main header**.
+* Ensure the logo does not appear slightly too high, too low, or offset from the text.
+* Maintain the existing logo proportions and styling.
+* Do not stretch, distort, or unnecessarily resize the logo.
+* Make the header responsive so the centered logo remains properly aligned on desktop, tablet, and mobile.
+
+### 2. Login and Search Controls
+
+Reposition the existing **login/account icon and search icon** so that they do not interfere with the centered NewsSA branding.
+
+Desktop layout should generally follow:
+
+[Left navigation/menu]        [NEWS SA LOGO]        [Search] [Login]
+
+The exact spacing should be determined by the existing design system.
+
+Requirements:
+
+* Keep the logo perfectly centered independently of the right-side controls.
+* Search and login should be visually secondary to the main branding.
+* Do not allow the search/login controls to push the logo away from the true center of the page.
+* Maintain consistent spacing between the search and login controls.
+* Ensure the controls remain accessible and clickable.
+* On smaller screens, adapt the layout appropriately rather than allowing the header to become cramped.
+
+### 3. Implement Functional Internal Search
+
+Turn the existing search interface into a real internal article search system.
+
+The search must eventually search **WordPress content**, rather than the sample/mock articles currently contained in the React application.
+
+Implement:
+
+* Search icon/button.
+* Search input interface.
+* Search results state.
+* Loading state.
+* Empty-results state.
+* Error state.
+* Clear-search functionality.
+* Search results displaying:
+
+  * Article title
+  * Featured image
+  * Excerpt
+  * Category
+  * Publication date
+  * Author where available
+* Clicking a result should navigate to the corresponding article page.
+
+The search architecture must be designed around the WordPress REST API so that it can search live WordPress posts.
+
+Use the WordPress REST API's post search capability rather than filtering a hardcoded local array.
+
+### 4. Headless WordPress Architecture
+
+Convert the content architecture so the React application treats **WordPress as the CMS/source of truth**.
+
+The React frontend must NOT depend on hardcoded/sample article data.
+
+Structure the application so that articles are fetched dynamically from WordPress.
+
+Use an environment variable for the WordPress API URL, for example:
+
+VITE_WORDPRESS_API
+
+The application should be able to use an endpoint such as:
+
+/wp-json/wp/v2
+
+Do not hardcode the production WordPress URL directly into components.
+
+Create or maintain a centralized API/service layer responsible for communication with WordPress.
+
+Suggested architecture:
+
+src/
+├── api/
+│   ├── wordpress.ts
+│   ├── posts.ts
+│   ├── categories.ts
+│   ├── authors.ts
+│   └── media.ts
+│
+├── services/
+│   └── apiClient.ts
+│
+├── hooks/
+│   ├── usePosts.ts
+│   ├── usePost.ts
+│   ├── useCategory.ts
+│   ├── useFeaturedPosts.ts
+│   └── useSearch.ts
+│
+├── types/
+│   └── wordpress.ts
+│
+├── utils/
+│   └── transform.ts
+│
+└── components/
+└── LoadingStates.tsx
+
+You may adapt this structure to the existing project if equivalent functionality already exists. Do not unnecessarily duplicate files or architecture.
+
+### 5. Remove Sample Articles
+
+Remove the existing hardcoded/mock/sample articles from the main homepage and other article feeds.
+
+The homepage should no longer contain manually entered article objects such as:
+
+const articles = [...]
+
+or similar mock data.
+
+Instead, the homepage should request its content from WordPress.
+
+The React application should gracefully handle the situation where WordPress has no articles yet.
+
+For example:
+
+* Loading → show skeleton/loading state.
+* Articles available → render the articles.
+* No articles → show an appropriate empty state.
+* API failure → show an appropriate error state.
+
+Do NOT replace the sample articles with another set of fake articles.
+
+### 6. WordPress Article Fetching
+
+Configure the frontend to fetch WordPress posts dynamically.
+
+The architecture should support:
+
+* Latest articles
+* Featured articles
+* Category-specific articles
+* Individual article pages
+* Search results
+* Pagination
+* Featured images
+* Authors
+* Categories
+* Publication dates
+* Excerpts
+* Full article content
+
+Use WordPress REST API endpoints such as:
+
+/wp-json/wp/v2/posts
+
+and:
+
+/wp-json/wp/v2/posts?search=QUERY
+
+and category-specific queries where appropriate.
+
+The implementation should use WordPress post IDs, slugs, categories, authors, featured media and rendered content rather than relying on manually maintained frontend data.
+
+### 7. Article Transformation Layer
+
+Keep WordPress-specific API formatting separate from the UI.
+
+Create/use a transformation layer that converts WordPress REST API responses into the Article format used by the React components.
+
+For example:
+
+WordPress API → API types → transform/normalise → React Article model → UI components
+
+This means the visual components should not be filled with WordPress-specific parsing logic.
+
+### 8. Webhook / Content Update Architecture
+
+Prepare the application architecture for WordPress-driven content updates.
+
+Important clarification:
+
+The React frontend should fetch WordPress content dynamically rather than relying on a webhook to manually push every article into the frontend.
+
+Where appropriate, structure the project so a future WordPress webhook/revalidation mechanism can trigger cache invalidation or a refresh when:
+
+* A new article is published.
+* An article is updated.
+* An article is deleted.
+* A category is updated.
+
+Do not create a fake webhook implementation.
+
+If the current hosting environment cannot directly receive WordPress webhooks, document the integration point in the code rather than pretending the webhook is operational.
+
+The primary source of truth remains WordPress.
+
+### 9. Environment Configuration
+
+Create/update the environment configuration so the WordPress API can easily be changed between development, staging and production.
+
+Example:
+
+VITE_WORDPRESS_API=http://pcnn.local/wp-json/wp/v2
+
+Do not expose private WordPress credentials or authentication secrets in frontend environment variables.
+
+The React frontend should only use public WordPress REST API endpoints unless authentication is specifically required.
+
+### 10. Preserve the Existing Design
+
+This is an implementation/refinement task, NOT a complete redesign.
+
+Keep:
+
+* Existing NewsSA visual identity
+* Existing colour palette
+* Existing typography
+* Existing article card designs
+* Existing page layouts
+* Existing navigation structure
+* Existing responsive design
+* Existing animations/interactions where appropriate
+
+Only modify the design where necessary to accomplish the header alignment, search functionality, and WordPress integration.
+
+### 11. Code Quality
+
+Before completing the implementation:
+
+* Remove unused mock article data.
+* Remove unused imports.
+* Avoid duplicated API-fetching logic.
+* Reuse existing components where possible.
+* Add proper TypeScript types.
+* Handle API errors gracefully.
+* Handle loading states gracefully.
+* Avoid putting API calls directly into presentational components.
+* Keep WordPress API logic centralized.
+* Make sure existing routes continue working.
+* Ensure the application still builds successfully.
+
+### 12. Final Architecture Goal
+
+The finished application should follow this general flow:
+
+WORDPRESS
+↓
+WordPress REST API
+↓
+API / Service Layer
+↓
+React Hooks
+↓
+Transformation Layer
+↓
+React Components
+↓
+NewsSA Website
+
+The homepage, category pages, article pages and search should all ultimately consume live WordPress data.
+
+Most importantly:
+
+**Do not create replacement mock content.**
+
+The purpose of this update is to make the existing NewsSA React frontend ready to operate as a **headless WordPress frontend**, while preserving the current design and improving the header/search experience.

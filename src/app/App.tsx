@@ -1728,8 +1728,8 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
   );
   if (error || !article) return <ErrorState title="Article not found" message={error ?? undefined} onRetry={() => window.location.reload()} />;
 
-  const prevArticle = null;
-  const nextArticle = null;
+  const prevArticle: { id: number; title: string } | null = null as { id: number; title: string } | null;
+  const nextArticle: { id: number; title: string } | null = null as { id: number; title: string } | null;
 
   return (
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
@@ -1843,7 +1843,7 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
 
           {/* Prev / next */}
           <div className="mt-10 grid grid-cols-2 gap-4 border-t border-border pt-6">
-            {prevArticle ? (
+            {prevArticle && (
               <button
                 onClick={() => navigate({ type: "article", id: prevArticle.id })}
                 className="text-left border border-border p-4 hover:border-foreground/30 transition-colors group"
@@ -1855,8 +1855,9 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
                   {prevArticle.title}
                 </p>
               </button>
-            ) : <div />}
-            {nextArticle ? (
+            )}
+            {!prevArticle && <div />}
+            {nextArticle && (
               <button
                 onClick={() => navigate({ type: "article", id: nextArticle.id })}
                 className="text-right border border-border p-4 hover:border-foreground/30 transition-colors group"
@@ -1868,7 +1869,8 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
                   {nextArticle.title}
                 </p>
               </button>
-            ) : <div />}
+            )}
+            {!nextArticle && <div />}
           </div>
 
           {/* Comment section placeholder */}

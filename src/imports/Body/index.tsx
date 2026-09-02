@@ -408,7 +408,7 @@ function Heading() {
   return (
     <div className="max-w-[672px] relative shrink-0 w-[672px]" data-name="Heading 1">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start max-w-[inherit] pt-[12px] relative size-full">
-        <p className="[word-break:break-word] font-['Playfair_Display:Black',sans-serif] font-black leading-[45.76px] relative shrink-0 text-[41.6px] text-white w-[672px]">{`A Continent at the Crossroads: How Africa's Political Realignment Is Reshaping the Global Order`}</p>
+        <p className="[word-break:break-word] font-['Playfair_Display:Black',sans-serif] font-black leading-[45.76px] relative shrink-0 text-[30px] text-white w-[672px]">{`A Continent at the Crossroads: How Africa's Political Realignment Is Reshaping the Global Order`}</p>
       </div>
     </div>
   );

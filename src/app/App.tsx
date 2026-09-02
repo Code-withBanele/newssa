@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Search, Menu, X, ChevronDown, ArrowRight, TrendingUp, TrendingDown,
   Clock, Facebook, Twitter, Linkedin, Mail, ArrowUp, Bookmark,
-  MessageSquare, ChevronLeft, ChevronRight, Instagram, Youtube, User
+  MessageSquare, ChevronLeft, ChevronRight, Instagram, Youtube, User, Settings
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { Article } from "../utils/transform";
@@ -41,7 +41,6 @@ type Page =
   | { type: "home" }
   | { type: "category"; name: string }
   | { type: "article"; id: number }
-  | { type: "finance" }
   | { type: "search"; query: string };
 
 // --- Category meta ---
@@ -119,13 +118,14 @@ function makeSparkData(positive: boolean) {
 
 // --- Nav categories ---
 const NAV_CATEGORIES = [
-  "News", "Technology", "Politics", "Business", "Finance",
+  "News", "Technology", "Politics", "Business",
   "Sports", "Science", "Motoring", "Entertainment", "Opinion",
 ];
 const ALL_CATEGORIES = [
   "Home", "Politics", "Business", "Economy", "Africa", "World",
-  "Technology", "Sports", "Science", "Entertainment", "Opinion", "Leadership & Ideas", "Finance", "Contact",
+  "Technology", "Sports", "Science", "Entertainment", "Opinion", "Leadership & Ideas", "Contact",
 ];
+const MORE_CATEGORIES = ALL_CATEGORIES.filter(cat => cat !== "Home" && !NAV_CATEGORIES.includes(cat));
 
 // --- Helpers ---
 function CategoryBadge({ category, small }: { category: string; small?: boolean }) {
@@ -155,7 +155,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8">
           <CategoryBadge category={article.category} />
-          <h2 className="font-['Playfair_Display',serif] font-black text-white text-3xl lg:text-4xl leading-tight mt-3 max-w-2xl">
+          <h2 className="font-['Playfair_Display',serif] font-black text-white text-[30px] leading-tight mt-3 max-w-2xl">
             {article.title}
           </h2>
           <div className="flex items-center gap-4 mt-4 text-white/60 font-mono text-[9px] tracking-widest uppercase">
@@ -182,7 +182,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
         />
       </div>
       <CategoryBadge category={article.category} small />
-      <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+      <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-2 group-hover:text-accent transition-colors">
         {article.title}
       </h3>
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
@@ -208,7 +208,7 @@ function ArticleCardSmall({ article, onClick, index }: { article: Article; onCli
       )}
       <div className="flex-1 min-w-0">
         {index === undefined && <CategoryBadge category={article.category} small />}
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug mt-1 group-hover:text-accent transition-colors line-clamp-3">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-1 group-hover:text-accent transition-colors line-clamp-3">
           {article.title}
         </h4>
         <p className="font-mono text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
@@ -232,7 +232,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       </div>
       <div className="flex-1 min-w-0">
         <CategoryBadge category={article.category} small />
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug mt-1.5 group-hover:text-accent transition-colors line-clamp-2">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-1.5 group-hover:text-accent transition-colors line-clamp-2">
           {article.title}
         </h4>
         <div className="flex items-center gap-2 mt-2 text-foreground/65 font-mono text-[10px] tracking-wider uppercase">
@@ -290,7 +290,7 @@ function SearchResultCard({ article, query, onClick }: {
           <CategoryBadge category={article.category} small />
           <span className="font-mono text-[8px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
         </div>
-        <h4 className="font-['Playfair_Display',serif] font-bold text-[13px] text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-[30px] text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors">
           {highlightText(article.title, query)}
         </h4>
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
@@ -585,6 +585,12 @@ function Preloader({ visible }: { visible: boolean }) {
 // --- Auth types ---
 type AuthUser = AccountUser & { name: string };
 
+type LatestRead = {
+  id: number;
+  title: string;
+  readAt: string;
+};
+
 // --- Account modal ---
 function LoginModal({ onClose, onLogin, initialMode = "login" }: {
   onClose: () => void;
@@ -779,9 +785,22 @@ function Navbar({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOverlayOpen, setSearchOverlayOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [latestReads, setLatestReads] = useState<LatestRead[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!user || (!userMenuOpen && !mobileOpen)) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(`newssa_latest_reads_${user.id}`) ?? "[]");
+      setLatestReads(Array.isArray(stored) ? stored : []);
+    } catch {
+      setLatestReads([]);
+    }
+  }, [user, userMenuOpen, mobileOpen]);
 
   useEffect(() => {
     if (!userMenuOpen) return;
@@ -865,7 +884,7 @@ function Navbar({
             {/* Top bar */}
             <div className="border-b border-white/10">
               {/* Three-column: [left spacer] [centered logo] [right controls] */}
-              <div className="max-w-7xl mx-auto px-4 lg:px-8 flex items-center h-16">
+              <div className="max-w-7xl mx-auto px-4 lg:px-8 flex items-center h-24">
 
                 {/* Left — desktop only spacer that matches right side width */}
                 <div className="hidden md:flex flex-1 items-center" />
@@ -873,19 +892,19 @@ function Navbar({
                 {/* Center — logo lockup, always centered */}
                 <button
                   onClick={() => navigate({ type: "home" })}
-                  className="flex items-center gap-4 shrink-0 mx-auto md:mx-0"
+                  className="flex items-center gap-4 shrink-0 mx-auto"
                 >
-                  <img src={logoImg} alt="News SA" className="w-11 h-11 object-cover" />
+                  <img src={logoImg} alt="News SA" className="w-[100px] h-[100px] object-cover" />
                   <div className="flex flex-col">
                     <p
                       className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none"
-                      style={{ fontSize: "15px", textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+                      style={{ fontSize: "30px", textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
                     >
                       NEWS SOUTH AFRICA
                     </p>
                     <p
                       className="font-mono text-white/55 tracking-[0.18em] uppercase"
-                      style={{ fontSize: "8px", marginTop: "5px" }}
+                      style={{ fontSize: "16px", marginTop: "5px" }}
                     >
                       Independent Digital News
                     </p>
@@ -899,7 +918,7 @@ function Navbar({
                   {/* Search button */}
                   <button
                     onClick={() => setSearchOverlayOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 border border-white/20 text-white/70 hover:text-white hover:border-white/50 transition-colors group"
+                    className="flex w-56 items-center gap-2 px-3 py-2 border border-white/20 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all group"
                     aria-label="Open search"
                   >
                     <Search size={14} />
@@ -915,11 +934,11 @@ function Navbar({
                       <div className="relative" ref={userMenuRef}>
                         <button
                           onClick={() => setUserMenuOpen(v => !v)}
-                          className="flex items-center gap-2 pl-1 pr-3 py-1 border border-white/25 hover:border-white/50 transition-colors group"
-                          aria-label="Account menu"
+                          className="flex items-center gap-2 pl-2 pr-3 py-1.5 border border-white/25 hover:bg-white/10 hover:border-white/50 transition-all group"
+                          aria-label="Open user settings"
                         >
-                          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white font-bold text-[11px]">
-                            {user.name.charAt(0).toUpperCase()}
+                          <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white">
+                            <User size={14} />
                           </div>
                           <span className="font-mono text-[8px] tracking-widest uppercase text-white/80 group-hover:text-white transition-colors max-w-[80px] truncate">
                             {user.name.split(" ")[0]}
@@ -928,14 +947,33 @@ function Navbar({
                         </button>
 
                         {userMenuOpen && (
-                          <div className="absolute right-0 top-full mt-1 w-44 bg-white shadow-xl border border-border z-[100]">
+                          <div className="absolute right-0 top-full mt-1 w-72 bg-white shadow-xl border border-border z-[100]">
                             <div className="px-4 py-3 border-b border-border">
-                              <p className="font-['Inter',sans-serif] text-xs font-semibold text-foreground truncate">{user.name}</p>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Settings size={13} className="text-accent" />
+                                <p className="font-mono text-[9px] tracking-widest uppercase font-bold text-foreground">User settings</p>
+                              </div>
+                              <p className="font-['Inter',sans-serif] text-xs font-bold text-foreground truncate">{user.name}</p>
                               <p className="font-mono text-[8px] text-muted-foreground truncate mt-0.5">{user.email}</p>
                             </div>
-                            <button className="w-full text-left px-4 py-2.5 font-mono text-[8px] tracking-widest uppercase text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors flex items-center gap-2">
-                              <User size={11} /> My Profile
-                            </button>
+                            <div className="px-4 py-3 border-b border-border">
+                              <p className="font-mono text-[9px] tracking-widest uppercase font-bold text-foreground mb-2">Latest reads</p>
+                              {latestReads.length > 0 ? (
+                                <div className="flex flex-col gap-2">
+                                  {latestReads.map(read => (
+                                    <button
+                                      key={read.id}
+                                      onClick={() => { setUserMenuOpen(false); navigate({ type: "article", id: read.id }); }}
+                                      className="text-left font-['Inter',sans-serif] text-xs font-semibold text-foreground/75 hover:bg-secondary hover:text-accent px-2 py-1.5 transition-colors"
+                                    >
+                                      {read.title}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <p className="font-['Inter',sans-serif] text-xs text-muted-foreground">Your latest reads will appear here.</p>
+                              )}
+                            </div>
                             <button className="w-full text-left px-4 py-2.5 font-mono text-[8px] tracking-widest uppercase text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors flex items-center gap-2">
                               <Bookmark size={11} /> Saved Articles
                             </button>
@@ -954,7 +992,7 @@ function Navbar({
                       {/* Always-visible log out button */}
                       <button
                         onClick={onLogout}
-                        className="border border-white/20 px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/70 hover:text-white hover:border-white/50 transition-colors"
+                        className="border border-white/20 px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all"
                         title="Log out"
                       >
                         Log Out
@@ -965,17 +1003,17 @@ function Navbar({
                     <>
                       <button
                         onClick={onLoginClick}
-                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:text-white hover:border-white/55 transition-colors"
+                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign In
                       </button>
                       <button
                         onClick={onRegisterClick}
-                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:text-white hover:border-white/55 transition-colors"
+                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign Up
                       </button>
-                      <button className="bg-accent px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white hover:bg-orange-500 transition-colors">
+                      <button className="bg-accent px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white hover:bg-orange-500 hover:brightness-110 transition-all">
                         Subscribe
                       </button>
                     </>
@@ -992,9 +1030,13 @@ function Navbar({
                     <Search size={18} />
                   </button>
                   {user ? (
-                    <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white font-bold text-[12px] mx-1">
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
+                    <button
+                      onClick={() => setMobileOpen(true)}
+                      className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white hover:brightness-110 transition-all mx-1"
+                      aria-label="Open user settings"
+                    >
+                      <User size={16} />
+                    </button>
                   ) : (
                     <button
                       onClick={onLoginClick}
@@ -1018,25 +1060,44 @@ function Navbar({
             {/* Category nav */}
             <div className="hidden md:block border-t border-white/10">
               <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                <nav className="flex items-center overflow-x-auto no-scrollbar">
+                <nav className="flex items-center justify-center gap-1">
                   {NAV_CATEGORIES.map(cat => (
                     <button
                       key={cat}
-                      onClick={() =>
-                        cat === "News"
-                          ? navigate({ type: "home" })
-                          : navigate({ type: "category", name: cat })
-                      }
-                      className="relative shrink-0 px-5 py-3.5 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:text-white transition-colors group"
+                      onClick={() => cat === "News" ? navigate({ type: "home" }) : navigate({ type: "category", name: cat })}
+                      className="relative shrink-0 px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
                     >
                       {cat}
-                      <span className="absolute bottom-0 left-5 w-0 h-[2px] bg-accent group-hover:w-6 transition-all duration-200" />
+                      <span className="absolute bottom-0 left-4 w-0 h-[2px] bg-accent group-hover:w-6 transition-all duration-200" />
                     </button>
                   ))}
-                  <div className="flex-1" />
-                  <button className="shrink-0 flex items-center gap-1.5 px-5 py-3.5 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:text-white transition-colors">
-                    More <ChevronDown size={11} />
-                  </button>
+                  <div className="relative shrink-0">
+                    <button
+                      onClick={() => setCategoriesOpen(v => !v)}
+                      className="flex items-center gap-1.5 px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all"
+                      aria-expanded={categoriesOpen}
+                      aria-haspopup="menu"
+                    >
+                      More <ChevronDown size={11} className={`transition-transform ${categoriesOpen ? "rotate-180" : ""}`} />
+                    </button>
+                    {categoriesOpen && (
+                      <div className="absolute right-0 top-full z-[100] min-w-56 overflow-hidden bg-[#0f1f3d] border border-white/25 shadow-2xl" role="menu">
+                        {MORE_CATEGORIES.map(cat => (
+                          <button
+                            key={cat}
+                            onClick={() => {
+                              setCategoriesOpen(false);
+                              navigate({ type: "category", name: cat });
+                            }}
+                            className="block w-full text-left px-5 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.06em] uppercase text-white/85 hover:bg-white/15 hover:text-white transition-colors"
+                            role="menuitem"
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </nav>
               </div>
             </div>
@@ -1047,6 +1108,26 @@ function Navbar({
         {/* Mobile menu */}
         {mobileOpen && (
           <div className="md:hidden bg-[rgba(8,14,28,0.97)] border-b border-white/10">
+            {user && (
+              <div className="px-4 pt-4 pb-2 border-b border-white/10">
+                <p className="font-mono text-[9px] tracking-widest uppercase font-bold text-white">{user.name}</p>
+                <p className="font-mono text-[8px] text-white/50 mt-1">{user.email}</p>
+                {latestReads.length > 0 && (
+                  <div className="mt-3">
+                    <p className="font-mono text-[8px] tracking-widest uppercase font-bold text-white/70 mb-1.5">Latest reads</p>
+                    {latestReads.slice(0, 3).map(read => (
+                      <button
+                        key={read.id}
+                        onClick={() => { setMobileOpen(false); navigate({ type: "article", id: read.id }); }}
+                        className="block w-full text-left py-1.5 font-['Inter',sans-serif] text-xs font-semibold text-white/70 hover:text-accent transition-colors truncate"
+                      >
+                        {read.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
             <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
               {ALL_CATEGORIES.map(cat => (
                 <button
@@ -1054,7 +1135,6 @@ function Navbar({
                   onClick={() => {
                     setMobileOpen(false);
                     if (cat === "Home") navigate({ type: "home" });
-                    else if (cat === "Finance") navigate({ type: "finance" });
                     else navigate({ type: "category", name: cat });
                   }}
                   className="text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
@@ -1380,13 +1460,13 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <button
                   key={a.id}
                   onClick={() => navigate({ type: "article", id: a.id })}
-                  className="w-full text-left flex gap-4 items-start px-7 py-5 border-t border-border hover:bg-secondary/20 transition-colors"
+                  className="w-full text-left flex gap-4 items-start px-7 py-5 border-t border-border cursor-pointer hover:bg-secondary/40 transition-all group"
                 >
                   <span className="font-['Playfair_Display',serif] font-black text-foreground/10 text-lg shrink-0">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug">
+                    <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.timeAgo}</p>
@@ -1678,6 +1758,19 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
   const { articles: trending } = usePosts({ per_page: 5, orderby: "date" }, []);
 
   useEffect(() => { window.scrollTo(0, 0); }, [id]);
+
+  useEffect(() => {
+    if (!user || !article) return;
+    const key = `newssa_latest_reads_${user.id}`;
+    try {
+      const stored = JSON.parse(localStorage.getItem(key) ?? "[]") as LatestRead[];
+      const next = [
+        { id: article.id, title: article.title, readAt: new Date().toISOString() },
+        ...stored.filter(read => read.id !== article.id),
+      ].slice(0, 5);
+      localStorage.setItem(key, JSON.stringify(next));
+    } catch { return; }
+  }, [article, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -2477,7 +2570,7 @@ function ContactPage() {
 // APP
 // ============================================================
 function pageFromPath(pathname: string): Page {
-  if (pathname === "/finance" || pathname === "/category/finance") return { type: "finance" };
+  if (pathname === "/finance") return { type: "category", name: "Finance" };
 
   const categoryMatch = pathname.match(/^\/category\/([^/]+)\/?$/);
   if (categoryMatch) {
@@ -2501,7 +2594,6 @@ function pagePath(page: Page): string {
     return `/category/${slug}`;
   }
   if (page.type === "article") return `/article/${page.id}`;
-  if (page.type === "finance") return "/finance";
   if (page.type === "search") return `/?search=${encodeURIComponent(page.query)}`;
   return "/";
 }
@@ -2552,13 +2644,10 @@ export default function App() {
       case "home":
         return <HomePage navigate={navigate} />;
       case "category":
-        if (currentPage.name === "Finance") return <FinancePage navigate={navigate} />;
         if (currentPage.name === "Contact") return <ContactPage />;
         return <CategoryPage name={currentPage.name} navigate={navigate} />;
       case "article":
         return <ArticlePage id={currentPage.id} navigate={navigate} user={user} />;
-      case "finance":
-        return <FinancePage navigate={navigate} />;
       case "search":
         return <SearchPage query={currentPage.query} navigate={navigate} />;
       default:

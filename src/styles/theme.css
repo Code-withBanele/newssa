@@ -1,7 +1,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
+  --font-size: 18px;
   --background: #f8f5f0;
   --foreground: #0f1f3d;
   --card: #ffffff;
@@ -140,24 +140,28 @@
   }
 
   h1 {
+    font-family: "DM Sans", sans-serif;
     font-size: var(--text-2xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h2 {
+    font-family: "DM Sans", sans-serif;
     font-size: var(--text-xl);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h3 {
+    font-family: "DM Sans", sans-serif;
     font-size: var(--text-lg);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;
   }
 
   h4 {
+    font-family: "DM Sans", sans-serif;
     font-size: var(--text-base);
     font-weight: var(--font-weight-medium);
     line-height: 1.5;

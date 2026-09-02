@@ -619,7 +619,7 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
     e.preventDefault();
     setError("");
     if (mode === "2fa") {
-      if (!/^\d{6}$/.test(token)) { setError("Enter the 6-digit code from your authenticator app."); return; }
+      if (!/^\d{6}$/.test(token)) { setError("Enter the 6-digit verification code sent to your email."); return; }
       setLoading(true);
       try {
         const result = await verifyTwoFactor(challenge, token);
@@ -642,7 +642,8 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
         ? await register(firstName, lastName, email, password)
         : await login(email, password);
       setChallenge(result.challenge);
-      setOtpAuthUri(result.otpAuthUri ?? "");
+      setVerificationPurpose(mode === "register" ? "registration" : "login");
+      setToken("");
       setMode("2fa");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to continue.");
@@ -672,7 +673,7 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
                 {mode === "register" ? "Join NewsSA" : mode === "2fa" ? "Secure verification" : "Welcome back"}
               </p>
               <h2 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground leading-none">
-                {mode === "register" ? "Create Account" : mode === "2fa" ? "Verify your identity" : "Sign In"}
+                {mode === "register" ? "Create Account" : mode === "2fa" ? "Verify your email" : "Sign In"}
               </h2>
             </div>
             <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors mt-1">
@@ -690,9 +691,8 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
             {mode === "2fa" ? (
               <>
                 <p className="font-['Inter',sans-serif] text-sm text-muted-foreground leading-relaxed">
-                  Enter the 6-digit code from your authenticator app to {otpAuthUri ? "finish setting up your account" : "complete sign in"}.
+                  Enter the 6-digit verification code sent to <strong className="text-foreground">{email}</strong> to {verificationPurpose === "registration" ? "finish setting up your account" : "complete your sign in"}.
                 </p>
-                {otpAuthUri && <code className="block break-all bg-secondary px-3 py-2 font-mono text-[9px] text-foreground">{otpAuthUri}</code>}
                 <input value={token} onChange={e => setToken(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus placeholder="000000" className="w-full border border-border bg-transparent px-4 py-3 font-mono text-lg tracking-[0.4em] text-foreground text-center outline-none focus:border-foreground transition-colors" />
               </>
             ) : (
@@ -748,7 +748,7 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  Signing in…
+                  {mode === "2fa" ? "Verifying…" : "Sending code…"}
                 </>
               ) : mode === "register" ? "Create Account" : mode === "2fa" ? "Verify code" : "Sign In"}
             </button>

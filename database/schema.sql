@@ -9,10 +9,16 @@ CREATE TABLE IF NOT EXISTS users (
   email_verified BOOLEAN NOT NULL DEFAULT FALSE,
   two_factor_enabled BOOLEAN NOT NULL DEFAULT FALSE,
   two_factor_secret_encrypted TEXT,
+  verification_code_hash TEXT,
+  verification_code_expires_at TIMESTAMPTZ,
+  verification_attempts INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   last_login_at TIMESTAMPTZ
 );
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_code_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_code_expires_at TIMESTAMPTZ;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS verification_attempts INTEGER NOT NULL DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id BIGSERIAL PRIMARY KEY,

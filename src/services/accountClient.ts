@@ -7,7 +7,6 @@ export interface AccountUser {
 
 export interface AuthChallenge {
   challenge: string;
-  otpAuthUri?: string;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {

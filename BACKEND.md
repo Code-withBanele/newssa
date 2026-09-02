@@ -15,9 +15,9 @@ WordPress article content is not copied into PostgreSQL. `article_id` is the pub
 
 ## API routes
 
-- `POST /api/auth/register`: validates input, hashes the password, creates a pending account, and returns a short-lived 2FA setup challenge plus `otpauth://` URI.
-- `POST /api/auth/verify-2fa`: verifies the TOTP code, activates the account, and issues the HttpOnly session cookie.
-- `POST /api/auth/login`: verifies the password and returns a short-lived 2FA challenge.
+- `POST /api/auth/register`: validates input, hashes the password, creates a pending account, sends a six-digit email OTP, and returns a short-lived verification challenge.
+- `POST /api/auth/verify-2fa`: verifies the hashed, expiring email OTP, activates the account, and issues the HttpOnly session cookie.
+- `POST /api/auth/login`: verifies the password, sends a six-digit email OTP, and returns a short-lived verification challenge.
 - `POST /api/auth/logout`: deletes the current server session.
 - `GET /api/auth/me`: returns the current user from the session cookie.
 - `GET|POST|DELETE /api/saved-articles`: reads, saves, or removes article IDs for the authenticated session only. The client cannot choose `user_id`.
@@ -32,8 +32,11 @@ Configure these as server-side Vercel environment variables, never as `VITE_*` v
 - `POSTGRES_URL`: PostgreSQL connection string from the Vercel/Neon integration.
 - `AUTH_SESSION_SECRET`: long random secret used to sign short-lived 2FA challenges.
 - `AUTH_ENCRYPTION_KEY`: 64 hexadecimal characters representing a 32-byte AES key.
+- `RESEND_API_KEY`: server-side API key for transactional email delivery.
+- `AUTH_EMAIL_FROM`: verified sender address, for example `NewsSA <no-reply@your-domain.com>`.
+- `RESEND_TEMPLATE_ID`: the Resend email template ID. The template must reference the dynamic variable `OTP_CODE`.
 
-The existing frontend still needs to be wired to these endpoints when the account/save UI is ready. At present, its sign-in modal and newsletter form are demo/local UI handlers; no fake database fallback was added. Guests should use a separate client-only save key such as `newssa_guest_saved_articles`, and those IDs must never be sent to `/api/saved-articles`.
+The frontend sign-in modal uses these endpoints and only marks the user authenticated after email OTP verification. No fake database fallback was added. Guests should use a separate client-only save key such as `newssa_guest_saved_articles`, and those IDs must never be sent to `/api/saved-articles`.
 
 ## Deployment note
 

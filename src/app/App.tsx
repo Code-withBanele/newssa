@@ -5,7 +5,8 @@ import {
   MessageSquare, ChevronLeft, ChevronRight, Instagram, Youtube, User, Settings
 } from "lucide-react";
 import { LineChart, Line, ResponsiveContainer } from "recharts";
-import { Article } from "../utils/transform";
+import { Article, transformPost } from "../utils/transform";
+import { fetchPost } from "../api/posts";
 import { usePosts } from "../hooks/usePosts";
 import { usePost } from "../hooks/usePost";
 import { useCategory } from "../hooks/useCategory";
@@ -13,7 +14,7 @@ import { useFeaturedPosts } from "../hooks/useFeaturedPosts";
 import { useSearch } from "../hooks/useSearch";
 import {
   AccountUser, getCurrentUser, getSavedArticles, login, logout, register,
-  saveArticle, subscribeNewsletter, unsaveArticle, verifyTwoFactor,
+  requestPasswordReset, resetPassword, resendVerification, saveArticle, subscribeNewsletter, unsaveArticle, verifyTwoFactor,
 } from "../services/accountClient";
 import {
   ArticleCardSkeleton, ArticleCardHorizontalSkeleton, HeroSkeleton,
@@ -41,7 +42,8 @@ type Page =
   | { type: "home" }
   | { type: "category"; name: string }
   | { type: "article"; id: number }
-  | { type: "search"; query: string };
+  | { type: "search"; query: string }
+  | { type: "saved" };
 
 // --- Category meta ---
 const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
@@ -591,13 +593,19 @@ type LatestRead = {
   readAt: string;
 };
 
+function maskEmail(email: string) {
+  const [local, domain] = email.split("@");
+  if (!local || !domain) return email;
+  return `${local.slice(0, 1)}${"*".repeat(Math.max(1, local.length - 1))}@${domain}`;
+}
+
 // --- Account modal ---
 function LoginModal({ onClose, onLogin, initialMode = "login" }: {
   onClose: () => void;
   onLogin: (user: AuthUser) => void;
   initialMode?: "login" | "register";
 }) {
-  const [mode, setMode] = useState<"login" | "register" | "2fa">(initialMode);
+  const [mode, setMode] = useState<"login" | "register" | "2fa" | "forgot" | "reset">(initialMode);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -605,8 +613,20 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
   const [challenge, setChallenge] = useState("");
   const [otpAuthUri, setOtpAuthUri] = useState("");
   const [token, setToken] = useState("");
+  const [verificationPurpose, setVerificationPurpose] = useState<"registration" | "login">("login");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sending" | "success">("idle");
+  const [resendError, setResendError] = useState("");
+  const [resendAvailableAt, setResendAvailableAt] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (mode !== "2fa") return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [mode]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
@@ -618,6 +638,7 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+    setMessage("");
     if (mode === "2fa") {
       if (!/^\d{6}$/.test(token)) { setError("Enter the 6-digit verification code sent to your email."); return; }
       setLoading(true);
@@ -632,6 +653,35 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
       }
       return;
     }
+    if (mode === "reset") {
+      if (!/^\d{6}$/.test(token)) { setError("Enter the 6-digit verification code."); return; }
+      if (password.length < 12) { setError("Password must be at least 12 characters."); return; }
+      setLoading(true);
+      try {
+        await resetPassword(challenge, token, password);
+        setMode("login");
+        setPassword("");
+        setToken("");
+        setMessage("Your password has been reset. You can now sign in.");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to reset password.");
+      } finally { setLoading(false); }
+      return;
+    }
+    if (mode === "forgot") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a valid email address."); return; }
+      setLoading(true);
+      try {
+        const result = await requestPasswordReset(email);
+        if (!result.challenge) { setMessage(result.message ?? "If an account exists for that email, a verification code has been sent."); return; }
+        setChallenge(result.challenge);
+        setToken("");
+        setMode("reset");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unable to process the password reset request.");
+      } finally { setLoading(false); }
+      return;
+    }
     if (!email.trim() || !password) { setError("Please enter your email and password."); return; }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError("Please enter a valid email address."); return; }
     if (password.length < 12) { setError("Password must be at least 12 characters."); return; }
@@ -644,6 +694,9 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
       setChallenge(result.challenge);
       setVerificationPurpose(mode === "register" ? "registration" : "login");
       setToken("");
+      setResendStatus("idle");
+      setResendError("");
+      setResendAvailableAt(Date.now() + 60000);
       setMode("2fa");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to continue.");
@@ -651,6 +704,23 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
       setLoading(false);
     }
   }
+
+  async function handleResend() {
+    if (resendStatus === "sending" || resendAvailableAt > now) return;
+    setResendStatus("sending");
+    setResendError("");
+    try {
+      const result = await resendVerification(challenge);
+      setChallenge(result.challenge);
+      setResendStatus("success");
+      setResendAvailableAt(Date.now() + 60000);
+    } catch (err) {
+      setResendStatus("idle");
+      setResendError(err instanceof Error ? err.message : "We couldn't send a new verification code. Please try again.");
+    }
+  }
+
+  const resendSeconds = Math.max(0, Math.ceil((resendAvailableAt - now) / 1000));
 
   return (
     <div
@@ -670,10 +740,10 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
           <div className="flex items-start justify-between mb-8">
             <div>
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
-                {mode === "register" ? "Join NewsSA" : mode === "2fa" ? "Secure verification" : "Welcome back"}
+                {mode === "register" ? "Join NewsSA" : mode === "2fa" || mode === "reset" ? "Secure verification" : mode === "forgot" ? "Account recovery" : "Welcome back"}
               </p>
               <h2 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground leading-none">
-                {mode === "register" ? "Create Account" : mode === "2fa" ? "Verify your email" : "Sign In"}
+                {mode === "register" ? "Create Account" : mode === "2fa" ? "Verify your email" : mode === "forgot" ? "Forgot password" : mode === "reset" ? "Set new password" : "Sign In"}
               </h2>
             </div>
             <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground transition-colors mt-1">
@@ -691,9 +761,28 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
             {mode === "2fa" ? (
               <>
                 <p className="font-['Inter',sans-serif] text-sm text-muted-foreground leading-relaxed">
-                  Enter the 6-digit verification code sent to <strong className="text-foreground">{email}</strong> to {verificationPurpose === "registration" ? "finish setting up your account" : "complete your sign in"}.
+                  Enter the 6-digit verification code sent to <strong className="text-foreground">{maskEmail(email)}</strong> to {verificationPurpose === "registration" ? "finish setting up your account" : "complete your sign in"}.
                 </p>
                 <input value={token} onChange={e => setToken(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus placeholder="000000" className="w-full border border-border bg-transparent px-4 py-3 font-mono text-lg tracking-[0.4em] text-foreground text-center outline-none focus:border-foreground transition-colors" />
+                <div className="space-y-2">
+                  <button type="button" onClick={handleResend} disabled={resendStatus === "sending" || resendSeconds > 0} className="text-accent font-['Inter',sans-serif] text-sm hover:underline disabled:text-muted-foreground disabled:no-underline disabled:cursor-not-allowed">
+                    {resendStatus === "sending" ? "Sending..." : resendSeconds > 0 ? `Resend OTP in ${resendSeconds}s` : "Resend OTP"}
+                  </button>
+                  {resendStatus === "success" && <p role="status" className="font-['Inter',sans-serif] text-sm text-green-700">A new verification code has been sent.</p>}
+                  {resendError && <p role="alert" className="font-['Inter',sans-serif] text-sm text-red-600">{resendError}</p>}
+                  <p className="font-['Inter',sans-serif] text-xs text-muted-foreground">If you still don't receive it, check your spam folder and confirm the address is correct.</p>
+                </div>
+              </>
+            ) : mode === "forgot" ? (
+              <>
+                <p className="font-['Inter',sans-serif] text-sm text-muted-foreground leading-relaxed">Enter your email address and we will send a verification code if an account is associated with it.</p>
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoFocus className="w-full border border-border bg-transparent px-4 py-3 font-['Inter',sans-serif] text-sm text-foreground placeholder:text-muted-foreground/50 outline-none focus:border-foreground transition-colors" />
+              </>
+            ) : mode === "reset" ? (
+              <>
+                <p className="font-['Inter',sans-serif] text-sm text-muted-foreground leading-relaxed">Enter the 6-digit code sent to <strong className="text-foreground">{maskEmail(email)}</strong>, then choose a new password.</p>
+                <input value={token} onChange={e => setToken(e.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" autoFocus placeholder="000000" className="w-full border border-border bg-transparent px-4 py-3 font-mono text-lg tracking-[0.4em] text-foreground text-center outline-none focus:border-foreground transition-colors" />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="New password (12+ characters)" className="w-full border border-border bg-transparent px-4 py-3 font-['Inter',sans-serif] text-sm text-foreground outline-none focus:border-foreground transition-colors" />
               </>
             ) : (
               <>
@@ -726,11 +815,12 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
 
             <div className="flex items-center justify-between">
               <span />
-              <button type="button" className="font-['Inter',sans-serif] text-sm text-accent hover:underline transition-colors">Forgot password?</button>
+              {mode === "login" && <button type="button" onClick={() => { setMode("forgot"); setError(""); setMessage(""); }} className="font-['Inter',sans-serif] text-sm text-accent hover:underline transition-colors">Forgot password?</button>}
             </div>
               </>
             )}
 
+            {message && <p role="status" className="font-['Inter',sans-serif] text-sm text-green-700 bg-green-50 border border-green-100 px-4 py-2.5">{message}</p>}
             {error && (
               <p className="font-['Inter',sans-serif] text-sm text-red-600 bg-red-50 border border-red-100 px-4 py-2.5">
                 {error}
@@ -748,19 +838,20 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                   </svg>
-                  {mode === "2fa" ? "Verifying…" : "Sending code…"}
+                  {mode === "2fa" ? "Verifying…" : mode === "reset" ? "Resetting…" : mode === "forgot" ? "Sending code…" : "Sending code…"}
                 </>
-              ) : mode === "register" ? "Create Account" : mode === "2fa" ? "Verify code" : "Sign In"}
+              ) : mode === "register" ? "Create Account" : mode === "2fa" ? "Verify code" : mode === "forgot" ? "Send reset code" : mode === "reset" ? "Reset password" : "Sign In"}
             </button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-border text-center">
-            {mode !== "2fa" && <p className="font-['Inter',sans-serif] text-sm text-muted-foreground">
+            {mode === "login" && <p className="font-['Inter',sans-serif] text-sm text-muted-foreground">
               {mode === "login" ? "Not a member yet?" : "Already have an account?"}{" "}
               <button type="button" onClick={() => { setMode(mode === "login" ? "register" : "login"); setError(""); }} className="text-accent hover:underline font-medium">
                 {mode === "login" ? "Create an account" : "Sign in"}
               </button>
             </p>}
+            {mode === "forgot" || mode === "reset" ? <button type="button" onClick={() => { setMode("login"); setError(""); setMessage(""); }} className="mt-4 font-['Inter',sans-serif] text-sm text-accent hover:underline">Back to sign in</button> : null}
           </div>
         </div>
       </div>
@@ -884,27 +975,27 @@ function Navbar({
             {/* Top bar */}
             <div className="border-b border-white/10">
               {/* Three-column: [left spacer] [centered logo] [right controls] */}
-              <div className="max-w-7xl mx-auto px-4 lg:px-8 flex items-center h-24">
+              <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 flex items-center min-h-20 lg:h-24">
 
                 {/* Left — desktop only spacer that matches right side width */}
-                <div className="hidden md:flex flex-1 items-center" />
+                <div className="hidden lg:flex flex-1 items-center" />
 
                 {/* Center — logo lockup, always centered */}
                 <button
                   onClick={() => navigate({ type: "home" })}
-                  className="flex items-center gap-4 shrink-0 mx-auto"
+                  className="relative flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 lg:px-3 py-2 max-w-full"
                 >
-                  <img src={logoImg} alt="News SA" className="w-[100px] h-[100px] object-cover" />
+                  <span aria-hidden="true" className="absolute inset-0 -z-10 border border-white/15 bg-black/25 shadow-lg shadow-black/20 backdrop-blur-[2px]" />
+                  <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
                   <div className="flex flex-col">
                     <p
-                      className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none"
-                      style={{ fontSize: "30px", textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+                      className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[30px] whitespace-nowrap"
+                      style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
                     >
                       NEWS SOUTH AFRICA
                     </p>
                     <p
-                      className="font-mono text-white/55 tracking-[0.18em] uppercase"
-                      style={{ fontSize: "16px", marginTop: "5px" }}
+                      className="font-mono text-white/55 tracking-[0.12em] lg:tracking-[0.15em] xl:tracking-[0.18em] uppercase text-[8px] lg:text-[11px] xl:text-[16px] mt-1 xl:mt-[5px]"
                     >
                       Independent Digital News
                     </p>
@@ -914,11 +1005,11 @@ function Navbar({
                 <div className="flex-1" />
 
                 {/* Right — desktop actions */}
-                <div className="hidden md:flex items-center gap-2">
+                <div className="hidden lg:flex items-center gap-1 xl:gap-2">
                   {/* Search button */}
                   <button
                     onClick={() => setSearchOverlayOpen(true)}
-                    className="flex w-56 items-center gap-2 px-3 py-2 border border-white/20 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all group"
+                    className="flex w-40 xl:w-56 items-center gap-2 px-2 xl:px-3 py-2 border border-white/20 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all group"
                     aria-label="Open search"
                   >
                     <Search size={14} />
@@ -934,7 +1025,7 @@ function Navbar({
                       <div className="relative" ref={userMenuRef}>
                         <button
                           onClick={() => setUserMenuOpen(v => !v)}
-                          className="flex items-center gap-2 pl-2 pr-3 py-1.5 border border-white/25 hover:bg-white/10 hover:border-white/50 transition-all group"
+                          className="flex items-center gap-1 xl:gap-2 pl-1 xl:pl-2 pr-2 xl:pr-3 py-1.5 border border-white/25 hover:bg-white/10 hover:border-white/50 transition-all group"
                           aria-label="Open user settings"
                         >
                           <div className="w-7 h-7 rounded-full bg-accent flex items-center justify-center text-white">
@@ -974,7 +1065,7 @@ function Navbar({
                                 <p className="font-['Inter',sans-serif] text-xs text-muted-foreground">Your latest reads will appear here.</p>
                               )}
                             </div>
-                            <button className="w-full text-left px-4 py-2.5 font-mono text-[8px] tracking-widest uppercase text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors flex items-center gap-2">
+                            <button onClick={() => { setUserMenuOpen(false); navigate({ type: "saved" }); }} className="w-full text-left px-4 py-2.5 font-mono text-[8px] tracking-widest uppercase text-foreground/70 hover:bg-secondary hover:text-foreground transition-colors flex items-center gap-2">
                               <Bookmark size={11} /> Saved Articles
                             </button>
                             <div className="border-t border-border">
@@ -992,7 +1083,7 @@ function Navbar({
                       {/* Always-visible log out button */}
                       <button
                         onClick={onLogout}
-                        className="border border-white/20 px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all"
+                        className="border border-white/20 px-2 xl:px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/70 hover:bg-white/10 hover:text-white hover:border-white/50 transition-all"
                         title="Log out"
                       >
                         Log Out
@@ -1003,13 +1094,13 @@ function Navbar({
                     <>
                       <button
                         onClick={onLoginClick}
-                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
+                        className="border border-white/25 px-3 xl:px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign In
                       </button>
                       <button
                         onClick={onRegisterClick}
-                        className="border border-white/25 px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
+                        className="border border-white/25 px-3 xl:px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign Up
                       </button>
@@ -1021,7 +1112,7 @@ function Navbar({
                 </div>
 
                 {/* Mobile: search + (avatar or login) + hamburger */}
-                <div className="flex md:hidden items-center gap-1">
+                <div className="flex lg:hidden items-center gap-1">
                   <button
                     onClick={() => setSearchOverlayOpen(true)}
                     className="p-2 text-white/70 hover:text-white transition-colors"
@@ -1058,14 +1149,14 @@ function Navbar({
             </div>
 
             {/* Category nav */}
-            <div className="hidden md:block border-t border-white/10">
+            <div className="hidden lg:block border-t border-white/10">
               <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                <nav className="flex items-center justify-center gap-1">
+                <nav className="flex items-center justify-center gap-0 xl:gap-1">
                   {NAV_CATEGORIES.map(cat => (
                     <button
                       key={cat}
                       onClick={() => cat === "News" ? navigate({ type: "home" }) : navigate({ type: "category", name: cat })}
-                      className="relative shrink-0 px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
+                      className="relative shrink-0 px-2 xl:px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
                     >
                       {cat}
                       <span className="absolute bottom-0 left-4 w-0 h-[2px] bg-accent group-hover:w-6 transition-all duration-200" />
@@ -1074,7 +1165,7 @@ function Navbar({
                   <div className="relative shrink-0">
                     <button
                       onClick={() => setCategoriesOpen(v => !v)}
-                      className="flex items-center gap-1.5 px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all"
+                      className="flex items-center gap-1 px-2 xl:px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all"
                       aria-expanded={categoriesOpen}
                       aria-haspopup="menu"
                     >
@@ -1107,7 +1198,7 @@ function Navbar({
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="md:hidden bg-[rgba(8,14,28,0.97)] border-b border-white/10">
+          <div className="lg:hidden bg-[rgba(8,14,28,0.97)] border-b border-white/10">
             {user && (
               <div className="px-4 pt-4 pb-2 border-b border-white/10">
                 <p className="font-mono text-[9px] tracking-widest uppercase font-bold text-white">{user.name}</p>
@@ -1129,6 +1220,11 @@ function Navbar({
               </div>
             )}
             <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+              {user && (
+                <button onClick={() => { setMobileOpen(false); navigate({ type: "saved" }); }} className="flex items-center gap-2 text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8">
+                  <Bookmark size={14} /> Saved Articles
+                </button>
+              )}
               {ALL_CATEGORIES.map(cat => (
                 <button
                   key={cat}
@@ -1745,12 +1841,68 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
 // ============================================================
 // ARTICLE PAGE
 // ============================================================
-function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) => void; user: AuthUser | null }) {
+function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: Page) => void; user: AuthUser | null; onRequireLogin: () => void }) {
+  const [articles, setArticles] = useState<Article[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    if (!user) { setLoading(false); return; }
+    let cancelled = false;
+    getSavedArticles()
+      .then(result => Promise.all(result.articles.map(item => fetchPost(item.articleId).then(transformPost))))
+      .then(loaded => { if (!cancelled) setArticles(loaded); })
+      .catch(() => { if (!cancelled) setError(true); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, [user]);
+
+  if (!user) return (
+    <main className="max-w-7xl mx-auto px-4 lg:px-8 py-24">
+      <div className="max-w-md mx-auto text-center">
+        <Bookmark size={32} className="mx-auto text-accent" />
+        <h1 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground mt-5">Sign in to view saved articles</h1>
+        <p className="font-['Inter',sans-serif] text-sm text-muted-foreground mt-3">Your reading list is private and available after you sign in.</p>
+        <button onClick={onRequireLogin} className="mt-6 bg-foreground text-white px-5 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">Sign In</button>
+      </div>
+    </main>
+  );
+
+  if (loading) return <main className="max-w-7xl mx-auto px-4 lg:px-8 py-16"><div className="grid grid-cols-1 md:grid-cols-2 gap-8">{[1, 2].map(item => <ArticleCardSkeleton key={item} />)}</div></main>;
+  if (error) return <ErrorState title="Saved articles unavailable" message="We couldn't load your saved articles. Please try again." onRetry={() => window.location.reload()} />;
+
+  return (
+    <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
+      <div className="flex items-end justify-between border-b-2 border-foreground pb-4 mb-8">
+        <div>
+          <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2">Your reading list</p>
+          <h1 className="font-['Playfair_Display',serif] font-black text-4xl text-foreground">Saved Articles</h1>
+        </div>
+        <Bookmark className="text-accent" size={28} />
+      </div>
+      {articles.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
+          <Bookmark size={32} className="text-muted-foreground" />
+          <div>
+            <p className="font-['Playfair_Display',serif] text-xl font-bold text-foreground">No saved articles yet.</p>
+            <p className="font-['Inter',sans-serif] text-sm text-muted-foreground mt-1">Keep the stories you want to return to in one place.</p>
+          </div>
+          <button onClick={() => navigate({ type: "home" })} className="bg-foreground text-white px-5 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">Explore Articles</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
+          {articles.map(article => <ArticleCardMedium key={article.id} article={article} onClick={() => navigate({ type: "article", id: article.id })} />)}
+        </div>
+      )}
+    </main>
+  );
+}
+
+function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navigate: (p: Page) => void; user: AuthUser | null; onRequireLogin: () => void }) {
   const { article, loading, error } = usePost(id);
-  const guestKey = "newssa_guest_saved_articles";
-  const [saved, setSaved] = useState(() => {
-    try { return JSON.parse(localStorage.getItem(guestKey) ?? "[]").includes(id); } catch { return false; }
-  });
+  const [saved, setSaved] = useState(false);
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const { articles: related } = usePosts(
     article ? { categories: [], per_page: 3, orderby: "date" } : {},
     [article?.id]
@@ -1778,20 +1930,15 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
   }, [id, user]);
 
   async function toggleSaved() {
-    if (user) {
-      try {
-        if (saved) await unsaveArticle(id);
-        else await saveArticle(id);
-        setSaved(!saved);
-      } catch { return; }
-      return;
-    }
+    if (!user) { onRequireLogin(); return; }
+    setSaveLoading(true);
+    setSaveError("");
     try {
-      const ids = JSON.parse(localStorage.getItem(guestKey) ?? "[]") as number[];
-      const next = saved ? ids.filter(articleId => articleId !== id) : [...new Set([...ids, id])];
-      localStorage.setItem(guestKey, JSON.stringify(next));
-      setSaved(!saved);
-    } catch { return; }
+      if (saved) await unsaveArticle(id);
+      else await saveArticle(id);
+      setSaved(current => !current);
+    } catch { setSaveError("We couldn't update your saved articles. Please try again."); }
+    finally { setSaveLoading(false); }
   }
 
   const shareArticle = (platform: "twitter" | "facebook" | "linkedin" | "email") => {
@@ -1881,11 +2028,12 @@ function ArticlePage({ id, navigate, user }: { id: number; navigate: (p: Page) =
                   <Icon size={16} />
                 </button>
               ))}
-              <button aria-label={saved ? "Remove saved article" : "Save article"} onClick={toggleSaved} className={`transition-colors ${saved ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}>
-                <Bookmark size={16} />
+              <button aria-label={saved ? "Remove saved article" : "Save article"} onClick={toggleSaved} disabled={saveLoading} className={`flex items-center gap-1.5 font-mono text-[9px] tracking-widest uppercase transition-colors disabled:opacity-50 ${saved ? "text-accent" : "text-muted-foreground hover:text-foreground"}`}>
+                <Bookmark size={16} fill={saved ? "currentColor" : "none"} /> {saveLoading ? "Saving..." : saved ? "Saved" : "Save"}
               </button>
             </div>
           </div>
+          {saveError && <p role="alert" className="mt-2 text-right font-['Inter',sans-serif] text-xs text-red-600">{saveError}</p>}
 
           {/* Hero image */}
           <div className="mt-8 mb-8 overflow-hidden">
@@ -2571,6 +2719,7 @@ function ContactPage() {
 // ============================================================
 function pageFromPath(pathname: string): Page {
   if (pathname === "/finance") return { type: "category", name: "Finance" };
+  if (pathname === "/saved" || pathname === "/saved/") return { type: "saved" };
 
   const categoryMatch = pathname.match(/^\/category\/([^/]+)\/?$/);
   if (categoryMatch) {
@@ -2595,6 +2744,7 @@ function pagePath(page: Page): string {
   }
   if (page.type === "article") return `/article/${page.id}`;
   if (page.type === "search") return `/?search=${encodeURIComponent(page.query)}`;
+  if (page.type === "saved") return "/saved";
   return "/";
 }
 
@@ -2647,9 +2797,11 @@ export default function App() {
         if (currentPage.name === "Contact") return <ContactPage />;
         return <CategoryPage name={currentPage.name} navigate={navigate} />;
       case "article":
-        return <ArticlePage id={currentPage.id} navigate={navigate} user={user} />;
+        return <ArticlePage id={currentPage.id} navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
       case "search":
         return <SearchPage query={currentPage.query} navigate={navigate} />;
+      case "saved":
+        return <SavedArticlesPage navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
       default:
         return <HomePage navigate={navigate} />;
     }

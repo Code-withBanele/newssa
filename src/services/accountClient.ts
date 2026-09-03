@@ -38,6 +38,18 @@ export function verifyTwoFactor(challenge: string, token: string) {
   return request<{ user: AccountUser }>("/api/auth/verify-2fa", { method: "POST", body: JSON.stringify({ challenge, token }) });
 }
 
+export function resendVerification(challenge: string) {
+  return request<AuthChallenge>("/api/auth/resend-verification", { method: "POST", body: JSON.stringify({ challenge }) });
+}
+
+export function requestPasswordReset(email: string) {
+  return request<AuthChallenge & { message?: string }>("/api/auth/forgot-password", { method: "POST", body: JSON.stringify({ email }) });
+}
+
+export function resetPassword(challenge: string, token: string, password: string) {
+  return request<void>("/api/auth/reset-password", { method: "POST", body: JSON.stringify({ challenge, token, password }) });
+}
+
 export function logout() {
   return request<void>("/api/auth/logout", { method: "POST" });
 }

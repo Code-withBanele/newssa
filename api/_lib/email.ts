@@ -1,8 +1,21 @@
-export async function sendVerificationCode(email: string, code: string) {
+export class EmailDeliveryError extends Error {
+  constructor(message = "Email delivery failed.") {
+    super(message);
+    this.name = "EmailDeliveryError";
+  }
+}
+
+export function requireEmailConfig(templateId = process.env.RESEND_TEMPLATE_ID) {
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.AUTH_EMAIL_FROM;
-  const templateId = process.env.RESEND_TEMPLATE_ID;
-  if (!apiKey || !from || !templateId) throw new Error("Email delivery is not configured.");
+  if (!apiKey || !from || !templateId) throw new EmailDeliveryError("Email delivery is not configured.");
+}
+
+export async function sendVerificationCode(email: string, code: string, templateId = process.env.RESEND_TEMPLATE_ID) {
+  requireEmailConfig(templateId);
+  const apiKey = process.env.RESEND_API_KEY as string;
+  const from = process.env.AUTH_EMAIL_FROM as string;
+  const selectedTemplateId = templateId as string;
 
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -11,10 +24,10 @@ export async function sendVerificationCode(email: string, code: string) {
       from,
       to: [email],
       template: {
-        id: templateId,
+        id: selectedTemplateId,
         variables: { OTP_CODE: code },
       },
     }),
   });
-  if (!response.ok) throw new Error("Email delivery failed.");
+  if (!response.ok) throw new EmailDeliveryError();
 }

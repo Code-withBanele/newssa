@@ -61,8 +61,8 @@ export async function deleteSession(req: { headers: { cookie?: string } }) {
   if (token) await sql`DELETE FROM sessions WHERE token_hash = ${hashToken(token)}`;
 }
 
-export async function signChallenge(payload: Record<string, string | number>) {
-  return new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("10m").sign(sessionSecret());
+export async function signChallenge(payload: Record<string, string | number>, expiresIn: string | number = "10m") {
+  return new SignJWT(payload).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime(expiresIn).sign(sessionSecret());
 }
 
 export async function verifyChallenge(token: string) {

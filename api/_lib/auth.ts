@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import * as bcrypt from "bcryptjs";
 import { SignJWT, jwtVerify } from "jose";
-import { sql } from "./db";
+import { sql } from "./db.js";
 
 const SESSION_COOKIE = "__Host-newssa_session";
 const SESSION_DAYS = 30;

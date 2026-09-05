@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { createHash } from "node:crypto";
-import { sql, requireDatabaseConfig } from "../_lib/db";
-import { hashPassword, verifyChallenge } from "../_lib/auth";
-import { jsonBody, method } from "../_lib/http";
+import { sql, requireDatabaseConfig } from "../_lib/db.js";
+import { hashPassword, verifyChallenge } from "../_lib/auth.js";
+import { jsonBody, method } from "../_lib/http.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;

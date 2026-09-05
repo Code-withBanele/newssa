@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomInt, createHash } from "node:crypto";
-import { sql, requireDatabaseConfig } from "../_lib/db";
-import { signChallenge, verifyChallenge } from "../_lib/auth";
-import { sendVerificationCode } from "../_lib/email";
-import { jsonBody, method } from "../_lib/http";
+import { sql, requireDatabaseConfig } from "../_lib/db.js";
+import { signChallenge, verifyChallenge } from "../_lib/auth.js";
+import { sendVerificationCode } from "../_lib/email.js";
+import { jsonBody, method } from "../_lib/http.js";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const RESEND_OTP_TEMPLATE_ID = "8864c140-a061-44e6-bf2c-f81190eca3cc";

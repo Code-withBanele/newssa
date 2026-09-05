@@ -1,9 +1,9 @@
 import { randomInt, createHash } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { sql, requireDatabaseConfig } from "../_lib/db";
-import { verifyPassword, signChallenge } from "../_lib/auth";
-import { requireEmailConfig, sendVerificationCode } from "../_lib/email";
-import { jsonBody, method, validEmail } from "../_lib/http";
+import { sql, requireDatabaseConfig } from "../_lib/db.js";
+import { verifyPassword, signChallenge } from "../_lib/auth.js";
+import { requireEmailConfig, sendVerificationCode } from "../_lib/email.js";
+import { jsonBody, method, validEmail } from "../_lib/http.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;

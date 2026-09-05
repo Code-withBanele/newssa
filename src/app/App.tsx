@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import {
-  Search, Menu, X, ChevronDown, ArrowRight, TrendingUp, TrendingDown,
+  Search, Menu, X, ChevronDown, ArrowRight,
   Clock, Facebook, Twitter, Linkedin, Mail, ArrowUp, Bookmark,
   MessageSquare, ChevronLeft, ChevronRight, Instagram, Youtube, User, Settings
 } from "lucide-react";
-import { LineChart, Line, ResponsiveContainer } from "recharts";
 import { Article, transformPost } from "../utils/transform";
 import { fetchPost } from "../api/posts";
 import { usePosts } from "../hooks/usePosts";
@@ -43,7 +42,10 @@ type Page =
   | { type: "category"; name: string }
   | { type: "article"; id: number }
   | { type: "search"; query: string }
-  | { type: "saved" };
+  | { type: "saved" }
+  | { type: "about" }
+  | { type: "privacy" }
+  | { type: "cookies" };
 
 // --- Category meta ---
 const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
@@ -57,7 +59,6 @@ const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
   Opinion: { color: "#e6c3a8", textColor: "#b45309" },
   Africa: { color: "rgba(234,88,12,0.15)", textColor: "#c2410c" },
   World: { color: "#e0e7ff", textColor: "#3730a3" },
-  Finance: { color: "#d1fae5", textColor: "#065f46" },
   Leadership: { color: "#fef3c7", textColor: "#92400e" },
     Science: { color: "rgba(99,102,241,0.15)", textColor: "#4f46e5" },
 };
@@ -92,30 +93,6 @@ function highlightText(text: string, query: string): React.ReactNode {
       )}
     </>
   );
-}
-
-// --- Finance data ---
-const MARKET_DATA = [
-  { name: "JSE Top 40", value: "78,234", change: "+1.2%", positive: true, category: "Index" },
-  { name: "S&P 500", value: "5,832", change: "-0.3%", positive: false, category: "Index" },
-  { name: "NASDAQ", value: "19,456", change: "+0.8%", positive: true, category: "Index" },
-  { name: "Dow Jones", value: "42,150", change: "-0.1%", positive: false, category: "Index" },
-  { name: "FTSE 100", value: "8,234", change: "+0.5%", positive: true, category: "Index" },
-  { name: "Bitcoin", value: "$67,420", change: "+3.2%", positive: true, category: "Crypto" },
-  { name: "Ethereum", value: "$3,541", change: "+2.1%", positive: true, category: "Crypto" },
-  { name: "Gold", value: "$2,156/oz", change: "+0.4%", positive: true, category: "Commodity" },
-  { name: "Brent Crude", value: "$81.42/bbl", change: "-0.7%", positive: false, category: "Commodity" },
-  { name: "USD/ZAR", value: "18.65", change: "-0.2%", positive: true, category: "Currency" },
-  { name: "EUR/ZAR", value: "20.12", change: "+0.3%", positive: false, category: "Currency" },
-  { name: "GBP/ZAR", value: "23.45", change: "+0.1%", positive: false, category: "Currency" },
-];
-
-function makeSparkData(positive: boolean) {
-  const base = 50 + Math.random() * 20;
-  const trend = positive ? 1 : -1;
-  return Array.from({ length: 12 }, (_, i) => ({
-    v: base + trend * i * 1.5 + (Math.random() - 0.5) * 8,
-  }));
 }
 
 // --- Nav categories ---
@@ -1111,7 +1088,7 @@ function Navbar({
                   )}
                 </div>
 
-                {/* Mobile: search + (avatar or login) + hamburger */}
+                {/* Mobile: search + hamburger */}
                 <div className="flex lg:hidden items-center gap-1">
                   <button
                     onClick={() => setSearchOverlayOpen(true)}
@@ -1120,23 +1097,6 @@ function Navbar({
                   >
                     <Search size={18} />
                   </button>
-                  {user ? (
-                    <button
-                      onClick={() => setMobileOpen(true)}
-                      className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white hover:brightness-110 transition-all mx-1"
-                      aria-label="Open user settings"
-                    >
-                      <User size={16} />
-                    </button>
-                  ) : (
-                    <button
-                      onClick={onLoginClick}
-                      className="p-2 text-white/70 hover:text-white transition-colors"
-                      aria-label="Sign In"
-                    >
-                      <User size={18} />
-                    </button>
-                  )}
                   <button
                     className="p-2 text-white"
                     onClick={() => setMobileOpen(v => !v)}
@@ -1220,6 +1180,20 @@ function Navbar({
               </div>
             )}
             <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+              <button
+                onClick={() => user ? setUserMenuOpen(v => !v) : (() => { onLoginClick(); setMobileOpen(false); })()}
+                className="flex items-center gap-2 text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
+                aria-expanded={user ? userMenuOpen : undefined}
+              >
+                <User size={14} /> {user ? "Profile / Account" : "Sign In / Account"}
+                {user && <ChevronDown size={12} className={`transition-transform ${userMenuOpen ? "rotate-180" : ""}`} />}
+              </button>
+              {user && userMenuOpen && (
+                <div className="border-b border-white/10 px-2 py-3">
+                  <p className="font-mono text-[9px] tracking-widest uppercase font-bold text-white">{user.name}</p>
+                  <p className="font-mono text-[8px] text-white/50 mt-1">{user.email}</p>
+                </div>
+              )}
               {user && (
                 <button onClick={() => { setMobileOpen(false); navigate({ type: "saved" }); }} className="flex items-center gap-2 text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8">
                   <Bookmark size={14} /> Saved Articles
@@ -1324,7 +1298,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
       <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
         <div>
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Categories</p>
-          {["Politics", "Business", "Technology", "Sports", "Science", "Entertainment", "Opinion", "Finance", "Africa"].map(cat => (
+          {["Politics", "Business", "Technology", "Sports", "Science", "Entertainment", "Opinion", "Africa"].map(cat => (
             <button
               key={cat}
               onClick={() => navigate({ type: "category", name: cat })}
@@ -1336,19 +1310,17 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
         </div>
         <div>
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Company</p>
-          {["About Us", "Editorial Policy", "Our Team", "Advertise", "Careers", "Contact Us"].map(item => (
-            <button key={item} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">
-              {item}
-            </button>
+          <button onClick={() => navigate({ type: "about" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">About Us</button>
+          {["Editorial Policy", "Our Team", "Advertise", "Careers", "Contact Us"].map(item => (
+            <button key={item} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">{item}</button>
           ))}
         </div>
         <div>
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Legal</p>
-          {["Privacy Policy", "Terms of Service", "Cookie Policy", "POPIA Compliance"].map(item => (
-            <button key={item} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">
-              {item}
-            </button>
-          ))}
+          <button onClick={() => navigate({ type: "privacy" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Privacy Policy</button>
+          <button className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Terms of Service</button>
+          <button onClick={() => navigate({ type: "cookies" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Cookie Policy</button>
+          <button className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">POPIA Compliance</button>
         </div>
         <div>
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
@@ -1776,57 +1748,6 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Finance snapshot */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-border">
-        <div className="flex items-center justify-between mb-5">
-          <SectionHeader title="Markets" color="#065f46" />
-          <button
-            onClick={() => navigate({ type: "finance" })}
-            className="font-mono text-[9px] tracking-widest uppercase text-accent hover:text-foreground transition-colors flex items-center gap-1 mb-5"
-          >
-            Full Markets <ArrowRight size={9} />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-          {MARKET_DATA.slice(0, 6).map(m => {
-            const sparkData = makeSparkData(m.positive);
-            return (
-              <div
-                key={m.name}
-                className="border border-border p-3 hover:border-foreground/20 transition-colors cursor-pointer"
-                onClick={() => navigate({ type: "finance" })}
-              >
-                <p className="font-mono text-[9px] text-muted-foreground tracking-wider uppercase">{m.name}</p>
-                <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm mt-1">{m.value}</p>
-                <div className="flex items-center gap-1 mt-1">
-                  {m.positive ? (
-                    <TrendingUp size={10} className="text-green-600" />
-                  ) : (
-                    <TrendingDown size={10} className="text-red-500" />
-                  )}
-                  <span className={`font-mono text-[9px] ${m.positive ? "text-green-600" : "text-red-500"}`}>
-                    {m.change}
-                  </span>
-                </div>
-                <div className="h-8 mt-2">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkData}>
-                      <Line
-                        type="monotone"
-                        dataKey="v"
-                        stroke={m.positive ? "#16a34a" : "#ef4444"}
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </section>
 
@@ -2331,194 +2252,6 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
 }
 
 // ============================================================
-// FINANCE PAGE
-// ============================================================
-function FinancePage({ navigate }: { navigate: (p: Page) => void }) {
-  const [activeTab, setActiveTab] = useState<"all" | "indices" | "crypto" | "commodities" | "currencies">("all");
-  const { articles: financeArticles } = usePosts({ per_page: 13, orderby: "date" }, []);
-
-  const filtered = activeTab === "all"
-    ? MARKET_DATA
-    : MARKET_DATA.filter(m => {
-        if (activeTab === "indices") return m.category === "Index";
-        if (activeTab === "crypto") return m.category === "Crypto";
-        if (activeTab === "commodities") return m.category === "Commodity";
-        if (activeTab === "currencies") return m.category === "Currency";
-        return true;
-      });
-
-  useEffect(() => { window.scrollTo(0, 0); }, []);
-
-  return (
-    <main>
-      {/* Hero */}
-      <div className="bg-[#0f1f3d] text-white">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
-          <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40">Section</span>
-          <h1 className="font-['Playfair_Display',serif] font-black text-5xl md:text-7xl leading-none mt-1 text-[#d4af37]">
-            Finance
-          </h1>
-          <p className="font-['Inter',sans-serif] text-white/60 mt-3 text-sm">
-            Live markets, economic analysis, and business intelligence — updated continuously.
-          </p>
-          <p className="font-mono text-[8px] text-white/30 mt-2 tracking-widest uppercase">
-            All data is illustrative mock data for demonstration purposes
-          </p>
-        </div>
-      </div>
-
-      {/* Market overview */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-        <div className="flex items-center justify-between mb-6">
-          <SectionHeader title="Market Overview" color="#065f46" />
-          <div className="flex gap-2 mb-5">
-            {(["all", "indices", "crypto", "commodities", "currencies"] as const).map(tab => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`font-mono text-[9px] tracking-widest uppercase px-3 py-1.5 transition-colors ${
-                  activeTab === tab ? "bg-primary text-primary-foreground" : "border border-border hover:bg-secondary"
-                }`}
-              >
-                {tab === "all" ? "All" : tab.charAt(0).toUpperCase() + tab.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {filtered.map(m => {
-            const sparkData = makeSparkData(m.positive);
-            return (
-              <div
-                key={m.name}
-                className="border border-border p-4 hover:border-foreground/30 transition-all hover:shadow-sm cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <p className="font-mono text-[8px] text-muted-foreground tracking-wider uppercase">{m.category}</p>
-                  <div className="flex items-center gap-1">
-                    {m.positive ? (
-                      <TrendingUp size={10} className="text-green-600" />
-                    ) : (
-                      <TrendingDown size={10} className="text-red-500" />
-                    )}
-                    <span className={`font-mono text-[9px] font-medium ${m.positive ? "text-green-600" : "text-red-500"}`}>
-                      {m.change}
-                    </span>
-                  </div>
-                </div>
-                <p className="font-mono text-[9px] text-foreground font-medium">{m.name}</p>
-                <p className="font-['Playfair_Display',serif] font-bold text-foreground text-xl mt-1">{m.value}</p>
-                <div className="h-12 mt-3">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={sparkData}>
-                      <Line
-                        type="monotone"
-                        dataKey="v"
-                        stroke={m.positive ? "#16a34a" : "#ef4444"}
-                        strokeWidth={1.5}
-                        dot={false}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
-      {/* Finance news sections */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-border">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-12">
-          <div>
-            <SectionHeader title="Business News" color="#065f46" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-              {financeArticles.slice(0, 4).map(a => (
-                <ArticleCardMedium
-                  key={a.id}
-                  article={a}
-                  onClick={() => navigate({ type: "article", id: a.id })}
-                />
-              ))}
-            </div>
-
-            <SectionHeader title="Economic Analysis" color="#065f46" />
-            {financeArticles.slice(4, 8).map(a => (
-              <ArticleCardHorizontal
-                key={a.id}
-                article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
-              />
-            ))}
-
-            <div className="mt-10">
-              <SectionHeader title="Investment Insights" color="#065f46" />
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {financeArticles.slice(8, 11).map(a => (
-                  <div
-                    key={a.id}
-                    className="cursor-pointer group"
-                    onClick={() => navigate({ type: "article", id: a.id })}
-                  >
-                    <div className="overflow-hidden h-36 mb-3">
-                      <img src={a.image} alt={a.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                    </div>
-                    <CategoryBadge category={a.category} small />
-                    <h4 className="font-['Playfair_Display',serif] font-bold text-sm text-foreground mt-2 leading-snug group-hover:text-accent transition-colors">
-                      {a.title}
-                    </h4>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar */}
-          <aside>
-            <div className="border border-border p-6 mb-8">
-              <h3 className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-4">Trending Stocks</h3>
-              {[
-                { ticker: "NPN", name: "Naspers", price: "R3,420.00", change: "+2.4%", positive: true },
-                { ticker: "SOL", name: "Sasol", price: "R189.50", change: "-1.1%", positive: false },
-                { ticker: "MTN", name: "MTN Group", price: "R147.30", change: "+0.8%", positive: true },
-                { ticker: "SBK", name: "Standard Bank", price: "R234.10", change: "+1.3%", positive: true },
-                { ticker: "BHP", name: "BHP Group", price: "R521.40", change: "-0.5%", positive: false },
-              ].map(stock => (
-                <div key={stock.ticker} className="flex items-center gap-3 py-3 border-b border-border last:border-0">
-                  <div className="w-10 h-10 bg-secondary flex items-center justify-center shrink-0">
-                    <span className="font-mono text-[9px] font-medium text-foreground">{stock.ticker}</span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-['Inter',sans-serif] text-foreground text-xs font-medium">{stock.name}</p>
-                    <p className="font-mono text-[9px] text-muted-foreground">{stock.price}</p>
-                  </div>
-                  <span className={`font-mono text-[10px] font-medium ${stock.positive ? "text-green-600" : "text-red-500"}`}>
-                    {stock.change}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <SectionHeader title="Company News" />
-            {financeArticles.slice(0, 5).map(a => (
-              <ArticleCardSmall
-                key={a.id}
-                article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
-              />
-            ))}
-          </aside>
-        </div>
-      </section>
-
-      <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        <NewsletterSection />
-      </div>
-    </main>
-  );
-}
-
-// ============================================================
 // SEARCH PAGE
 // ============================================================
 function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) => void }) {
@@ -2714,11 +2447,111 @@ function ContactPage() {
   );
 }
 
+function InfoSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-t border-border pt-6">
+      <h2 className="font-['Playfair_Display',serif] font-bold text-2xl text-foreground mb-3">{title}</h2>
+      <div className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed space-y-3">{children}</div>
+    </section>
+  );
+}
+
+function AboutPage() {
+  return (
+    <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
+      <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">About</span>
+      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">About NEWSSA</h1>
+      <p className="font-['Inter',sans-serif] text-muted-foreground text-lg leading-relaxed mb-10">
+        NEWSSA is a digital news platform focused on delivering timely, accessible and relevant news to its readers. We cover important stories across South Africa, Africa and the wider world.
+      </p>
+      <div className="space-y-8">
+        <InfoSection title="Who We Are">
+          <p>NEWSSA is a digital news publication that brings together reporting and analysis on the developments shaping our communities and the wider world.</p>
+        </InfoSection>
+        <InfoSection title="What We Cover">
+          <p>Our editorial coverage includes South Africa, Africa, Politics, Business, Technology, Sports, Science, Entertainment, Opinion and World news.</p>
+        </InfoSection>
+        <InfoSection title="Our Mission">
+          <p>Our mission is to provide accessible, timely and responsible journalism that helps readers understand important developments and make sense of the news.</p>
+        </InfoSection>
+        <InfoSection title="Editorial Principles">
+          <p>We value accuracy, fairness, accountability and responsible reporting. We aim to treat our sources and readers with respect, correct material errors when identified, and present important information clearly.</p>
+        </InfoSection>
+      </div>
+    </main>
+  );
+}
+
+function PrivacyPolicyPage() {
+  return (
+    <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
+      <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
+      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Privacy Policy</h1>
+      <p className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed mb-10">This policy explains how NEWSSA handles information when you use the website. Last updated: September 2026.</p>
+      <div className="space-y-8">
+        <InfoSection title="Information You Provide"><p>When you create an account, we receive your name, email address and authentication information needed to verify your account, protect it and manage your session. We do not store your plain-text password.</p></InfoSection>
+        <InfoSection title="Saved Articles and Newsletter Subscriptions"><p>If you use these features, we store the articles you save and the email address used for a newsletter subscription. Account-related records may be associated with your user account.</p></InfoSection>
+        <InfoSection title="Website Usage and Cookies"><p>We receive technical information needed to operate the site, such as requests and browser interactions with its features. The site uses an essential session cookie for signed-in users and local storage for preferences and cookie-consent status. See the Cookie Policy for details.</p></InfoSection>
+        <InfoSection title="Services We Use"><p>Article content is provided through the WordPress REST API. Email delivery uses Resend when account verification, password reset or other account messages are sent. Account and saved-article data is stored in the configured PostgreSQL service. These services process information only as needed to provide their respective functions.</p></InfoSection>
+        <InfoSection title="Security"><p>We use measures such as password hashing, protected sessions and encrypted authentication secrets. No internet service can guarantee absolute security, so please use a unique password and contact us if you believe your account has been compromised.</p></InfoSection>
+        <InfoSection title="Your Rights"><p>Depending on applicable law, you may request access to, correction of or deletion of personal information, or object to or restrict certain processing. Contact us using the details below so we can review your request.</p></InfoSection>
+        <InfoSection title="Contact and Updates"><p>Privacy enquiries: [Add the appropriate privacy contact email address]. We may update this policy when the site or applicable requirements change. The latest version will be published on this page.</p></InfoSection>
+      </div>
+    </main>
+  );
+}
+
+function CookiePolicyPage() {
+  return (
+    <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
+      <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
+      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Cookie Policy</h1>
+      <p className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed mb-10">This policy describes the cookies and browser storage currently used by NEWSSA. Last updated: September 2026.</p>
+      <div className="space-y-8">
+        <InfoSection title="What Cookies Are"><p>Cookies are small values stored by a website in your browser. Similar browser storage, such as local storage, can remember a preference on the same device.</p></InfoSection>
+        <InfoSection title="Essential Authentication Cookie"><p>When you sign in, NEWSSA uses the <code className="font-mono text-xs">__Host-newssa_session</code> cookie to maintain your authenticated session. It is HTTP-only and uses secure transport in production. This cookie is required for account features such as saved articles.</p></InfoSection>
+        <InfoSection title="Preferences and Consent"><p>The existing interface may use local storage or cookies for preferences such as the sidebar state. NEWSSA also stores your cookie-consent choice locally under <code className="font-mono text-xs">newssa_cookie_consent</code> so the notice does not appear on every visit.</p></InfoSection>
+        <InfoSection title="Third-Party Cookies"><p>NEWSSA does not currently add advertising cookies, analytics cookies, tracking pixels or third-party cookies. WordPress provides article content and Resend delivers account email, but this site does not claim that those services place cookies in your browser through NEWSSA.</p></InfoSection>
+        <InfoSection title="Managing Cookies"><p>You can manage or delete browser cookies and local storage through your browser settings. Removing essential session storage may sign you out or affect preferences. To ask about cookie use, contact: [Add the appropriate privacy or support contact email address].</p></InfoSection>
+      </div>
+    </main>
+  );
+}
+
+function CookieConsent({ navigate }: { navigate: (p: Page) => void }) {
+  const [choice, setChoice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setChoice(window.localStorage.getItem("newssa_cookie_consent"));
+  }, []);
+
+  function saveChoice(value: "accepted" | "dismissed") {
+    window.localStorage.setItem("newssa_cookie_consent", value);
+    setChoice(value);
+  }
+
+  if (choice) return null;
+
+  return (
+    <aside className="fixed bottom-4 left-4 right-4 z-[200] border border-border bg-background p-4 shadow-xl md:left-auto md:max-w-md" role="dialog" aria-label="Cookie consent">
+      <p className="font-['Inter',sans-serif] text-sm leading-relaxed text-foreground">
+        NEWSSA uses essential cookies and browser storage for sign-in, preferences and consent. Read our <button type="button" onClick={() => navigate({ type: "cookies" })} className="text-accent underline underline-offset-2">Cookie Policy</button>.
+      </p>
+      <div className="mt-3 flex items-center gap-3">
+        <button type="button" onClick={() => saveChoice("accepted")} className="bg-primary px-4 py-2 font-mono text-[9px] tracking-widest uppercase text-primary-foreground hover:bg-accent transition-colors">Accept</button>
+        <button type="button" onClick={() => saveChoice("dismissed")} className="border border-border px-4 py-2 font-mono text-[9px] tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors">Dismiss</button>
+      </div>
+    </aside>
+  );
+}
+
 // ============================================================
 // APP
 // ============================================================
 function pageFromPath(pathname: string): Page {
-  if (pathname === "/finance") return { type: "category", name: "Finance" };
+  if (pathname === "/about" || pathname === "/about/") return { type: "about" };
+  if (pathname === "/privacy-policy" || pathname === "/privacy-policy/") return { type: "privacy" };
+  if (pathname === "/cookie-policy" || pathname === "/cookie-policy/") return { type: "cookies" };
   if (pathname === "/saved" || pathname === "/saved/") return { type: "saved" };
 
   const categoryMatch = pathname.match(/^\/category\/([^/]+)\/?$/);
@@ -2745,6 +2578,9 @@ function pagePath(page: Page): string {
   if (page.type === "article") return `/article/${page.id}`;
   if (page.type === "search") return `/?search=${encodeURIComponent(page.query)}`;
   if (page.type === "saved") return "/saved";
+  if (page.type === "about") return "/about";
+  if (page.type === "privacy") return "/privacy-policy";
+  if (page.type === "cookies") return "/cookie-policy";
   return "/";
 }
 
@@ -2802,6 +2638,12 @@ export default function App() {
         return <SearchPage query={currentPage.query} navigate={navigate} />;
       case "saved":
         return <SavedArticlesPage navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
+      case "about":
+        return <AboutPage />;
+      case "privacy":
+        return <PrivacyPolicyPage />;
+      case "cookies":
+        return <CookiePolicyPage />;
       default:
         return <HomePage navigate={navigate} />;
     }
@@ -2826,6 +2668,7 @@ export default function App() {
       />
       <div className="flex-1">{renderPage()}</div>
       <Footer navigate={navigate} />
+      <CookieConsent navigate={navigate} />
       <ScrollToTop />
     </div>
   );

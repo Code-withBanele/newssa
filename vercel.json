@@ -1,3 +1,8 @@
 {
-  "devCommand": "vite --port $PORT"
+  "devCommand": "vite --port $PORT",
+  "rewrites": [
+    { "source": "/about", "destination": "/" },
+    { "source": "/privacy-policy", "destination": "/" },
+    { "source": "/cookie-policy", "destination": "/" }
+  ]
 }

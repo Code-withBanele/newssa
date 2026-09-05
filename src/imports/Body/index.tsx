@@ -243,7 +243,7 @@ function Link8() {
   return (
     <div className="relative shrink-0" data-name="Link">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start px-[16px] py-[12px] relative size-full">
-        <p className="[word-break:break-word] font-['DM_Mono:Medium',sans-serif] leading-[15px] not-italic relative shrink-0 text-[#6b6880] text-[10px] tracking-[1px] uppercase whitespace-nowrap">Finance</p>
+        <p className="[word-break:break-word] font-['DM_Mono:Medium',sans-serif] leading-[15px] not-italic relative shrink-0 text-[#6b6880] text-[10px] tracking-[1px] uppercase whitespace-nowrap">Business</p>
         <NavLink4 />
       </div>
     </div>
@@ -2569,7 +2569,7 @@ function SectionHeader3() {
     <div className="relative shrink-0 w-full" data-name="SectionHeader">
       <div aria-hidden className="absolute border-[#0f766e] border-b-2 border-solid inset-0 pointer-events-none" />
       <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex items-center justify-between pb-[12px] relative size-full">
-        <p className="[word-break:break-word] font-['DM_Mono:Medium',sans-serif] leading-[16.5px] not-italic relative shrink-0 text-[#0f766e] text-[11px] tracking-[1.98px] uppercase whitespace-nowrap">{`Finance & Markets`}</p>
+        <p className="[word-break:break-word] font-['DM_Mono:Medium',sans-serif] leading-[16.5px] not-italic relative shrink-0 text-[#0f766e] text-[11px] tracking-[1.98px] uppercase whitespace-nowrap">{`Business & Markets`}</p>
         <Link38 />
       </div>
     </div>
@@ -5671,7 +5671,7 @@ function Link82() {
     <div className="relative shrink-0 w-full" data-name="Link">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start relative size-full">
         <div className="[word-break:break-word] font-['Inter:Regular',sans-serif] font-normal h-[20px] leading-[0] not-italic relative shrink-0 text-[14px] text-[rgba(248,245,240,0.6)] w-[114px]">
-          <p className="leading-[20px] mb-0">{`Finance & Money`}</p>
+          <p className="leading-[20px] mb-0">{`Business & Money`}</p>
           <p className="leading-[20px]">​</p>
         </div>
       </div>
@@ -5684,7 +5684,7 @@ function Link83() {
     <div className="relative shrink-0 w-full" data-name="Link">
       <div className="bg-clip-padding border-0 border-[transparent] border-solid content-stretch flex flex-col items-start relative size-full">
         <div className="[word-break:break-word] font-['Inter:Regular',sans-serif] font-normal h-[20px] leading-[0] not-italic relative shrink-0 text-[14px] text-[rgba(248,245,240,0.6)] w-[114px]">
-          <p className="leading-[20px] mb-0">{`Finance & Money`}</p>
+          <p className="leading-[20px] mb-0">{`Business & Money`}</p>
           <p className="leading-[20px]">​</p>
         </div>
       </div>

@@ -28,7 +28,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(401).json({ error: "That verification code is incorrect." });
     }
     const passwordHash = await hashPassword(password);
-    await sql`UPDATE users SET password_hash = ${passwordHash}, verification_code_hash = NULLNPM , verification_code_expires_at = NULL, verification_attempts = 0, updated_at = NOW() WHERE id = ${user.id}`;
+    await sql`UPDATE users SET password_hash = ${passwordHash}, verification_code_hash = NULL , verification_code_expires_at = NULL, verification_attempts = 0, updated_at = NOW() WHERE id = ${user.id}`;
     await sql`DELETE FROM sessions WHERE user_id = ${user.id}`;
     return res.status(204).end();
   } catch {

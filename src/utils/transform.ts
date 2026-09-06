@@ -8,7 +8,10 @@ export interface Article {
   subtitle: string;  // WP excerpt, stripped of HTML
   category: string;
   author: string;
+  authorAvailable: boolean;
   date: string;       // Formatted display date
+  publishedAt: string;
+  modifiedAt: string;
   timeAgo: string;
   readTime: string;   // Estimated from word count
   image: string;      // Best available featured image URL
@@ -64,9 +67,9 @@ function getFeaturedImageAlt(post: WPPost): string {
   return media?.alt_text ?? stripHtml(post.title.rendered);
 }
 
-function getAuthorName(post: WPPost): string {
+function getAuthorName(post: WPPost): { name: string; available: boolean } {
   const author = post._embedded?.author?.[0] as WPUser | undefined;
-  return author?.name ?? "News South Africa";
+  return { name: author?.name ?? "News South Africa", available: Boolean(author?.name) };
 }
 
 function getPrimaryCategory(post: WPPost): string {
@@ -100,6 +103,7 @@ function extractPullQuote(paragraphs: string[]): string | undefined {
 export function transformPost(post: WPPost): Article {
   const body = splitIntoParagraphs(post.content.rendered);
   const plainBody = body.join(" ");
+  const author = getAuthorName(post);
 
   return {
     id: post.id,
@@ -107,8 +111,11 @@ export function transformPost(post: WPPost): Article {
     title: stripHtml(post.title.rendered),
     subtitle: stripHtml(post.excerpt.rendered),
     category: getPrimaryCategory(post),
-    author: getAuthorName(post),
+    author: author.name,
+    authorAvailable: author.available,
     date: formatDate(post.date),
+    publishedAt: post.date,
+    modifiedAt: post.modified,
     timeAgo: timeAgo(post.date),
     readTime: estimateReadTime(plainBody),
     image: getFeaturedImageUrl(post),

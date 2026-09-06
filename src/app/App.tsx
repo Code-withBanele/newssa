@@ -11,9 +11,10 @@ import { usePost } from "../hooks/usePost";
 import { useCategory } from "../hooks/useCategory";
 import { useFeaturedPosts } from "../hooks/useFeaturedPosts";
 import { useSearch } from "../hooks/useSearch";
+import { SeoHead } from "./SeoHead";
 import {
   AccountUser, getCurrentUser, getSavedArticles, login, logout, register,
-  requestPasswordReset, resetPassword, resendVerification, saveArticle, subscribeNewsletter, unsaveArticle, verifyTwoFactor,
+  requestPasswordReset, resetPassword, resendVerification, saveArticle, unsaveArticle, verifyTwoFactor,
 } from "../services/accountClient";
 import {
   ArticleCardSkeleton, ArticleCardHorizontalSkeleton, HeroSkeleton,
@@ -950,9 +951,10 @@ function Navbar({
           <div className="relative" style={{ zIndex: 2 }}>
 
             {/* Top bar */}
-            <div className="border-b border-white/10">
+            <div className="relative border-b border-white/10">
+              <span aria-hidden="true" className="absolute inset-0 border border-white/15 bg-black/25 shadow-lg shadow-black/20 backdrop-blur-[2px]" />
               {/* Three-column: [left spacer] [centered logo] [right controls] */}
-              <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 flex items-center min-h-20 lg:h-24">
+              <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 flex items-center min-h-20 lg:h-24">
 
                 {/* Left — desktop only spacer that matches right side width */}
                 <div className="hidden lg:flex flex-1 items-center" />
@@ -962,7 +964,6 @@ function Navbar({
                   onClick={() => navigate({ type: "home" })}
                   className="relative flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 lg:px-3 py-2 max-w-full"
                 >
-                  <span aria-hidden="true" className="absolute inset-0 -z-10 border border-white/15 bg-black/25 shadow-lg shadow-black/20 backdrop-blur-[2px]" />
                   <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
                   <div className="flex flex-col">
                     <p
@@ -1067,7 +1068,7 @@ function Navbar({
                       </button>
                     </div>
                   ) : (
-                    /* Logged-out: sign in + subscribe */
+                    /* Logged-out: sign in */
                     <>
                       <button
                         onClick={onLoginClick}
@@ -1080,9 +1081,6 @@ function Navbar({
                         className="border border-white/25 px-3 xl:px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign Up
-                      </button>
-                      <button className="bg-accent px-4 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white hover:bg-orange-500 hover:brightness-110 transition-all">
-                        Subscribe
                       </button>
                     </>
                   )}
@@ -1226,9 +1224,6 @@ function Navbar({
                     <button onClick={() => { onRegisterClick(); setMobileOpen(false); }} className="flex-1 border border-white/25 py-2 font-mono text-[9px] tracking-widest uppercase text-white/70 hover:text-white transition-colors">Sign Up</button>
                   </>
                 )}
-                <button className="flex-1 bg-accent py-2 font-mono text-[9px] tracking-widest uppercase text-white hover:bg-orange-500 transition-colors">
-                  Subscribe
-                </button>
               </div>
           </nav>
         </div>
@@ -1240,63 +1235,12 @@ function Navbar({
 
 // --- Footer ---
 function Footer({ navigate }: { navigate: (p: Page) => void }) {
-  const [email, setEmail] = useState("");
-  const [newsletterError, setNewsletterError] = useState("");
-  const [newsletterLoading, setNewsletterLoading] = useState(false);
-
-  async function handleNewsletterSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setNewsletterError("");
-    setNewsletterLoading(true);
-    try {
-      await subscribeNewsletter(email);
-      setEmail("");
-    } catch (err) {
-      setNewsletterError(err instanceof Error ? err.message : "Unable to subscribe.");
-    } finally {
-      setNewsletterLoading(false);
-    }
-  }
-
   return (
     <footer className="bg-[#0f1f3d] text-white">
-      {/* Newsletter */}
-      <div className="border-b border-white/10 py-16">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row items-center gap-8">
-          <div className="flex-1">
-            <h3 className="font-['Playfair_Display',serif] text-2xl font-bold mb-2">
-              Stay informed, stay ahead.
-            </h3>
-            <p className="font-['Inter',sans-serif] text-white/60 text-sm">
-              Join 340,000 readers who receive our curated daily briefing.
-            </p>
-          </div>
-          <form
-            className="flex w-full md:w-auto gap-0"
-            onSubmit={handleNewsletterSubmit}
-          >
-            <input
-              type="email"
-              placeholder="Your email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="bg-white/10 border border-white/20 px-4 py-3 text-sm font-['Inter',sans-serif] text-white placeholder:text-white/40 outline-none focus:border-accent w-72"
-            />
-            <button
-              type="submit"
-              disabled={newsletterLoading}
-              className="bg-accent px-6 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-orange-600 transition-colors shrink-0"
-            >
-              {newsletterLoading ? "Subscribing..." : "Subscribe"}
-            </button>
-          </form>
-          {newsletterError && <p className="font-['Inter',sans-serif] text-xs text-red-200 mt-2">{newsletterError}</p>}
-        </div>
-      </div>
-
       {/* Links */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-        <div>
+      <div className="relative max-w-7xl mx-auto px-4 lg:px-8 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 overflow-hidden">
+        <span aria-hidden="true" className="absolute inset-0 border-y border-white/5 bg-black/10 shadow-inner" />
+        <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Categories</p>
           {["Politics", "Business", "Technology", "Sports", "Science", "Entertainment", "Opinion", "Africa"].map(cat => (
             <button
@@ -1308,21 +1252,21 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
             </button>
           ))}
         </div>
-        <div>
+        <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Company</p>
           <button onClick={() => navigate({ type: "about" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">About Us</button>
           {["Editorial Policy", "Our Team", "Advertise", "Careers", "Contact Us"].map(item => (
             <button key={item} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">{item}</button>
           ))}
         </div>
-        <div>
+        <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Legal</p>
           <button onClick={() => navigate({ type: "privacy" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Privacy Policy</button>
           <button className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Terms of Service</button>
           <button onClick={() => navigate({ type: "cookies" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Cookie Policy</button>
           <button className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">POPIA Compliance</button>
         </div>
-        <div>
+        <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
           <div className="flex gap-4 mb-6">
             {[
@@ -1337,11 +1281,11 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
               </button>
             ))}
           </div>
-          <div className="flex items-center gap-3 mb-2">
-            <img src={logoImg} alt="News SA" className="w-8 h-8 object-cover" />
+          <div className="flex flex-col items-start gap-3 mb-2">
+            <img src={logoImg} alt="News SA" className="w-32 h-32 object-cover" />
             <div>
-              <p className="font-['Playfair_Display',serif] text-white text-xs font-black">NEWS SOUTH AFRICA</p>
-              <p className="font-mono text-[8px] text-white/40 tracking-widest uppercase">Independent Digital News</p>
+                <p className="font-['Playfair_Display',serif] text-white text-[18px] font-black">NEWS SOUTH AFRICA</p>
+                <p className="font-mono text-[16px] text-white/40 tracking-widest uppercase">Independent Digital News</p>
             </div>
           </div>
         </div>
@@ -1358,69 +1302,6 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
         </div>
       </div>
     </footer>
-  );
-}
-
-// --- Newsletter inline ---
-function NewsletterSection() {
-  const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    try {
-      await subscribeNewsletter(email);
-      setSubmitted(true);
-      setEmail("");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to subscribe.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  return (
-    <div className="bg-[#0f1f3d] px-8 py-10 my-8">
-      {submitted ? (
-        <p className="font-['Playfair_Display',serif] text-white text-xl text-center">
-          Thank you for subscribing.
-        </p>
-      ) : (
-        <>
-          <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-2">Newsletter</p>
-          <h3 className="font-['Playfair_Display',serif] text-white text-2xl font-bold mb-1">
-            The Daily Brief
-          </h3>
-          <p className="font-['Inter',sans-serif] text-white/60 text-sm mb-6">
-            South Africa's essential morning read. Stories that matter, analysis that goes deeper.
-          </p>
-          <form
-            className="flex flex-col gap-2"
-            onSubmit={handleSubmit}
-          >
-            <input
-              type="email"
-              placeholder="Your email address"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full min-w-0 bg-white/10 border border-white/20 px-4 py-2.5 text-sm font-['Inter',sans-serif] text-white placeholder:text-white/40 outline-none focus:border-accent"
-            />
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-accent px-5 py-2.5 font-mono text-[9px] tracking-widest uppercase hover:bg-orange-600 transition-colors"
-            >
-              {loading ? "Subscribing..." : "Subscribe"}
-            </button>
-          </form>
-          {error && <p className="font-['Inter',sans-serif] text-xs text-red-200 mt-2">{error}</p>}
-        </>
-      )}
-    </div>
   );
 }
 
@@ -1456,12 +1337,15 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
   const politicsFeature = secondary[13] ?? null;
   const trending = secondary.slice(0, 6);
   const mostRead = secondary.slice(4, 10);
+  const seo = <SeoHead title="News South Africa | NewsSA" description="Independent news and events from South Africa, Africa and the world, published by News South Africa." path="/" keywords={["South Africa news", "Africa news", "NewsSA"]} />;
   // WordPress not connected
-  if (!import.meta.env.VITE_WORDPRESS_API) return <NotConfiguredState />;
-  if (error) return <ErrorState title="Could not load articles" message={error} />;
+  if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
+  if (error) return <>{seo}<ErrorState title="Could not load articles" message={error} /></>;
 
   if (loading || !hero) {
     return (
+      <>
+        {seo}
       <main>
         <section className="max-w-7xl mx-auto px-4 lg:px-8 pt-8 pb-4">
           <HeroSkeleton />
@@ -1472,6 +1356,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           </div>
         </section>
       </main>
+      </>
     );
   }
 
@@ -1507,17 +1392,6 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           </div>
           {/* Sidebar */}
           <div className="border-l border-border flex flex-col">
-            <div className="flex flex-col justify-center p-7">
-              <p className="font-['Inter',sans-serif] text-sm text-foreground/80 leading-relaxed">
-                From Johannesburg to Nairobi, a new generation of leaders is rewriting the rules of democratic governance — with consequences that will be felt for decades.
-              </p>
-              <button
-                onClick={() => navigate({ type: "article", id: hero.id })}
-                className="flex items-center gap-2 mt-5 font-mono text-[9px] tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Read Full Story <ArrowRight size={9} />
-              </button>
-            </div>
             <div className="border-t border-border">
               <div className="px-7 py-3 bg-secondary/30">
                 <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">
@@ -1751,10 +1625,6 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
         </div>
       </section>
 
-      {/* Newsletter */}
-      <div className="max-w-7xl mx-auto px-4 lg:px-8">
-        <NewsletterSection />
-      </div>
     </main>
   );
 }
@@ -1778,7 +1648,8 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
     return () => { cancelled = true; };
   }, [user]);
 
-  if (!user) return (
+  const seo = <SeoHead title="Saved Articles | NewsSA" description="Your saved NewsSA articles." path="/saved" robots="noindex, nofollow" />;
+  if (!user) return (<>{seo}
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-24">
       <div className="max-w-md mx-auto text-center">
         <Bookmark size={32} className="mx-auto text-accent" />
@@ -1787,12 +1658,14 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
         <button onClick={onRequireLogin} className="mt-6 bg-foreground text-white px-5 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">Sign In</button>
       </div>
     </main>
-  );
+  </>);
 
   if (loading) return <main className="max-w-7xl mx-auto px-4 lg:px-8 py-16"><div className="grid grid-cols-1 md:grid-cols-2 gap-8">{[1, 2].map(item => <ArticleCardSkeleton key={item} />)}</div></main>;
   if (error) return <ErrorState title="Saved articles unavailable" message="We couldn't load your saved articles. Please try again." onRetry={() => window.location.reload()} />;
 
   return (
+    <>
+      {seo}
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-12">
       <div className="flex items-end justify-between border-b-2 border-foreground pb-4 mb-8">
         <div>
@@ -1816,6 +1689,7 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
         </div>
       )}
     </main>
+    </>
   );
 }
 
@@ -1850,6 +1724,20 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
     getSavedArticles().then(result => setSaved(result.articles.some(item => item.articleId === id))).catch(() => setSaved(false));
   }, [id, user]);
 
+  const articlePath = `/article/${id}`;
+  const seo = <SeoHead
+    title={article ? `${article.title} | NewsSA` : "Article | NewsSA"}
+    description={article?.subtitle || "Read the latest independent news from News South Africa."}
+    path={articlePath}
+    type="article"
+    image={article?.image}
+    author={article?.authorAvailable ? article.author : undefined}
+    section={article?.category}
+    publishedTime={article?.publishedAt}
+    modifiedTime={article?.modifiedAt}
+    breadcrumbs={article ? [{ name: "Home", path: "/" }, { name: article.category, path: `/category/${article.category.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and")}` }, { name: article.title, path: articlePath }] : undefined}
+  />;
+
   async function toggleSaved() {
     if (!user) { onRequireLogin(); return; }
     setSaveLoading(true);
@@ -1879,20 +1767,22 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
     window.open(destinations[platform], "_blank", "noopener,noreferrer,width=640,height=640");
   };
 
-  if (!import.meta.env.VITE_WORDPRESS_API) return <NotConfiguredState />;
+  if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
   if (loading) return (
-    <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
+    <><SeoHead title="Article | NewsSA" description="Read the latest independent news from News South Africa." path={articlePath} type="article" /><main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-4">
         {Array.from({ length: 6 }, (_, i) => <ArticleCardSkeleton key={i} />)}
       </div>
-    </main>
+    </main></> 
   );
-  if (error || !article) return <ErrorState title="Article not found" message={error ?? undefined} onRetry={() => window.location.reload()} />;
+  if (error || !article) return <>{seo}<ErrorState title="Article not found" message={error ?? undefined} onRetry={() => window.location.reload()} /></>;
 
   const prevArticle: { id: number; title: string } | null = null as { id: number; title: string } | null;
   const nextArticle: { id: number; title: string } | null = null as { id: number; title: string } | null;
 
   return (
+    <>
+      {seo}
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
         {/* Main content */}
@@ -2054,9 +1944,6 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
 
         {/* Sidebar */}
         <aside>
-          {/* Newsletter */}
-          <NewsletterSection />
-
           {/* Related articles */}
           {related.length > 0 && (
             <div className="mt-0">
@@ -2087,6 +1974,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
         </aside>
       </div>
     </main>
+    </>
   );
 }
 
@@ -2104,13 +1992,15 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   const sidebar = sidebarArticles;
   const displayName = category?.name ?? name;
   const meta = getCategoryMeta(displayName);
+  const categorySlug = name.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and");
+  const seo = <SeoHead title={`${displayName} News | NewsSA`} description={`The latest ${displayName} news and updates from News South Africa.`} path={`/category/${categorySlug}`} keywords={[`${displayName} news`, "NewsSA"]} breadcrumbs={[{ name: "Home", path: "/" }, { name: displayName, path: `/category/${categorySlug}` }]} />;
 
   useEffect(() => { window.scrollTo(0, 0); setPage(1); }, [name]);
 
-  if (!import.meta.env.VITE_WORDPRESS_API) return <NotConfiguredState />;
-  if (error) return <ErrorState title={`Could not load ${displayName}`} message={error} />;
+  if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
+  if (error) return <>{seo}<ErrorState title={`Could not load ${displayName}`} message={error} /></>;
   if (loading) return (
-    <main>
+    <>{seo}<main>
       <div className="border-b border-border py-10 max-w-7xl mx-auto px-4 lg:px-8">
         <div className="h-16 bg-muted animate-pulse w-48 mb-2" />
         <div className="h-4 bg-muted animate-pulse w-32" />
@@ -2120,18 +2010,20 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
           {Array.from({ length: 6 }, (_, i) => <ArticleCardSkeleton key={i} />)}
         </div>
       </div>
-    </main>
+    </main></>
   );
   if (!loading && articles.length === 0) return (
-    <main>
+    <>{seo}<main>
       <div className="border-b border-border py-10 max-w-7xl mx-auto px-4 lg:px-8">
         <h1 className="font-['Playfair_Display',serif] font-black text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
       </div>
       <EmptyState title="No articles in this category yet" message="Check back soon — content is published from WordPress." />
-    </main>
+    </main></>
   );
 
   return (
+    <>
+      {seo}
     <main>
       {/* Category hero */}
       <div className="border-b border-border">
@@ -2243,11 +2135,11 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                 index={i}
               />
             ))}
-            <NewsletterSection />
           </aside>
         </div>
       </div>
     </main>
+    </>
   );
 }
 
@@ -2261,7 +2153,11 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
 
   useEffect(() => { window.scrollTo(0, 0); setSearchInput(query); }, [query]);
 
+  const seo = <SeoHead title={`Search: ${query} | NewsSA`} description={`Search NewsSA for articles about ${query}.`} path="/" robots="noindex, follow" />;
+
   return (
+    <>
+      {seo}
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
       <div className="max-w-2xl mb-10">
         <h1 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground mb-6">
@@ -2360,6 +2256,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
         </div>
       )}
     </main>
+    </>
   );
 }
 
@@ -2370,6 +2267,8 @@ function ContactPage() {
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [sent, setSent] = useState(false);
   return (
+    <>
+      <SeoHead title="Contact News South Africa | NewsSA" description="Contact the NewsSA editorial team with tips, corrections, story ideas and feedback." path="/category/contact" keywords={["contact NewsSA", "News South Africa contact"]} />
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-16">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div>
@@ -2444,6 +2343,7 @@ function ContactPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
 
@@ -2458,32 +2358,28 @@ function InfoSection({ title, children }: { title: string; children: React.React
 
 function AboutPage() {
   return (
+    <>
+      <SeoHead title="About News South Africa | NewsSA" description="Learn about News South Africa, an independent online publication based in Johannesburg." path="/about" keywords={["about NewsSA", "News South Africa"]} />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">About</span>
       <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">About NEWSSA</h1>
       <p className="font-['Inter',sans-serif] text-muted-foreground text-lg leading-relaxed mb-10">
-        NEWSSA is a digital news platform focused on delivering timely, accessible and relevant news to its readers. We cover important stories across South Africa, Africa and the wider world.
+        News South Africa (NewsSA) is an independent online publication based in Johannesburg, Gauteng Province, South Africa, with a focus on news and events happening in South Africa, the rest of Africa and the World. We are not politically affiliated, hence we accept potential news items from any individual and organisation regardless of their backgrounds. Every news item is judged and accepted on its merit only. The decision of the Editor and the editorial team is final and is based only on the merit of the material sent to them.
       </p>
       <div className="space-y-8">
         <InfoSection title="Who We Are">
           <p>NEWSSA is a digital news publication that brings together reporting and analysis on the developments shaping our communities and the wider world.</p>
         </InfoSection>
-        <InfoSection title="What We Cover">
-          <p>Our editorial coverage includes South Africa, Africa, Politics, Business, Technology, Sports, Science, Entertainment, Opinion and World news.</p>
-        </InfoSection>
-        <InfoSection title="Our Mission">
-          <p>Our mission is to provide accessible, timely and responsible journalism that helps readers understand important developments and make sense of the news.</p>
-        </InfoSection>
-        <InfoSection title="Editorial Principles">
-          <p>We value accuracy, fairness, accountability and responsible reporting. We aim to treat our sources and readers with respect, correct material errors when identified, and present important information clearly.</p>
-        </InfoSection>
       </div>
     </main>
+    </>
   );
 }
 
 function PrivacyPolicyPage() {
   return (
+    <>
+      <SeoHead title="Privacy Policy | NewsSA" description="Read the NewsSA privacy policy and learn how the website handles information." path="/privacy-policy" robots="noindex, follow" />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
       <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Privacy Policy</h1>
@@ -2498,11 +2394,14 @@ function PrivacyPolicyPage() {
         <InfoSection title="Contact and Updates"><p>Privacy enquiries: [Add the appropriate privacy contact email address]. We may update this policy when the site or applicable requirements change. The latest version will be published on this page.</p></InfoSection>
       </div>
     </main>
+    </>
   );
 }
 
 function CookiePolicyPage() {
   return (
+    <>
+      <SeoHead title="Cookie Policy | NewsSA" description="Read the NewsSA cookie policy and learn about cookies and browser storage used by the site." path="/cookie-policy" robots="noindex, follow" />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
       <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Cookie Policy</h1>
@@ -2515,6 +2414,7 @@ function CookiePolicyPage() {
         <InfoSection title="Managing Cookies"><p>You can manage or delete browser cookies and local storage through your browser settings. Removing essential session storage may sign you out or affect preferences. To ask about cookie use, contact: [Add the appropriate privacy or support contact email address].</p></InfoSection>
       </div>
     </main>
+    </>
   );
 }
 
@@ -2565,7 +2465,10 @@ function pageFromPath(pathname: string): Page {
 
   const articleMatch = pathname.match(/^\/article\/(\d+)\/?$/);
   if (articleMatch) return { type: "article", id: Number(articleMatch[1]) };
-  if (pathname === "/") return { type: "home" };
+  if (pathname === "/") {
+    const query = new URLSearchParams(window.location.search).get("search")?.trim();
+    return query ? { type: "search", query } : { type: "home" };
+  }
   return { type: "home" };
 }
 

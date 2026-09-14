@@ -50,6 +50,7 @@ type Page =
 
 // --- Category meta ---
 const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
+  News: { color: "rgba(30,58,138,0.08)", textColor: "#1e3a8a" },
   Politics: { color: "rgba(30,58,138,0.08)", textColor: "#1e3a8a" },
   Technology: { color: "rgba(187,77,0,0.3)", textColor: "#4338ca" },
   Business: { color: "#ebd7c5", textColor: "#065f46" },
@@ -61,11 +62,60 @@ const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
   Africa: { color: "rgba(234,88,12,0.15)", textColor: "#c2410c" },
   World: { color: "#e0e7ff", textColor: "#3730a3" },
   Leadership: { color: "#fef3c7", textColor: "#92400e" },
-    Science: { color: "rgba(99,102,241,0.15)", textColor: "#4f46e5" },
+  "Leadership & Ideas": { color: "#fef3c7", textColor: "#92400e" },
+  Science: { color: "rgba(99,102,241,0.15)", textColor: "#4f46e5" },
+  Motoring: { color: "#e5e7eb", textColor: "#4b5563" },
 };
 
+const CATEGORY_NAME_ALIASES: Record<string, string> = {
+  news: "News",
+  politics: "Politics",
+  technology: "Technology",
+  business: "Business",
+  economy: "Economy",
+  climate: "Climate",
+  sports: "Sports",
+  entertainment: "Entertainment",
+  opinion: "Opinion",
+  africa: "Africa",
+  world: "World",
+  leadership: "Leadership",
+  "leadership-and-ideas": "Leadership & Ideas",
+  science: "Science",
+  motoring: "Motoring",
+  contact: "Contact",
+  home: "Home",
+};
+
+function normalizeCategoryName(name: string): string {
+  const raw = decodeURIComponent((name ?? "").trim());
+  if (!raw) return "News";
+  const key = raw.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (CATEGORY_NAME_ALIASES[key]) return CATEGORY_NAME_ALIASES[key];
+
+  const words = raw.replace(/[_-]+/g, " ").split(/\s+/).filter(Boolean);
+  if (words.length === 0) return "News";
+
+  return words
+    .map(word => {
+      if (word.toLowerCase() === "and") return "&";
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ")
+    .replace(/\s&\s/g, " & ");
+}
+
+function toCategorySlug(name: string): string {
+  return normalizeCategoryName(name)
+    .toLowerCase()
+    .replace(/&/g, "and")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function getCategoryMeta(cat: string) {
-  return CATEGORY_META[cat] || { color: "#ede9e3", textColor: "#6b6880" };
+  const normalized = normalizeCategoryName(cat);
+  return CATEGORY_META[normalized] || { color: "#ede9e3", textColor: "#6b6880" };
 }
 
 // Content is now fetched from WordPress — see src/hooks/ and src/api/
@@ -967,15 +1017,18 @@ function Navbar({
                   <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
                   <div className="flex flex-col">
                     <p
-                      className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[30px] whitespace-nowrap"
-                      style={{ textShadow: "0 1px 4px rgba(0,0,0,0.7)" }}
+                      className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[45px] whitespace-nowrap"
+                      style={{
+                        WebkitTextStroke: "1px rgba(0,0,0,0.85)",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.85)",
+                      }}
                     >
                       NEWS SOUTH AFRICA
                     </p>
                     <p
                       className="font-mono text-white/55 tracking-[0.12em] lg:tracking-[0.15em] xl:tracking-[0.18em] uppercase text-[8px] lg:text-[11px] xl:text-[16px] mt-1 xl:mt-[5px]"
                     >
-                      Independent Digital News
+                      
                     </p>
                   </div>
                 </button>
@@ -1267,17 +1320,17 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
           <button className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">POPIA Compliance</button>
         </div>
         <div className="relative z-10">
-          <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
+          <p className="font-mono text-[20px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
           <div className="flex gap-4 mb-6">
             {[
-              { icon: Twitter, label: "Twitter" },
-              { icon: Facebook, label: "Facebook" },
-              { icon: Instagram, label: "Instagram" },
-              { icon: Linkedin, label: "LinkedIn" },
-              { icon: Youtube, label: "YouTube" },
-            ].map(({ icon: Icon, label }) => (
-              <button key={label} aria-label={label} className="text-white/40 hover:text-white transition-colors">
-                <Icon size={18} />
+             { icon: Twitter, label: "Twitter" , href : "https://x.com/NewsSA_Online" },
+              { icon: Facebook, label: "Facebook", href : "https://facebook.com/NewsSA" },
+              { icon: Instagram, label: "Instagram", href : "https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.instagram.com%2Fnewssa_online%3Ffbclid%3DIwcGRvZgVleHRuA2FlbQIxMABicmlkETF5RlJVWVI0aDZJYk9hd0ljc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuaOKm4LqthAZ3vzbcWvAi-b7bSluhrl7YRPFee2ma089SBoYbxih9RnlWsd_aem_Jix1SZK2WJ2pnykkobgrTg&h=AUBMo79nfKvj8RLL7qyVFE9D-bangfr5DK1IC9W5UIUWCCoCCNgU-r7k_TxuCw193ToHGQ97VTBu75G8QfqJ-I79Cc2R-L4hI-8UPL7eH3EmP5U_AnrQCfCpktC4Hrjq5nEA" },
+              
+            
+            ].map(({ icon: Icon, label, href }) => (
+              <button key={label} aria-label={label} className="text-white/40 hover:text-white transition-colors" onClick={() => window.open(href, "_blank")}     >
+                <Icon size={25} />
               </button>
             ))}
           </div>
@@ -1990,9 +2043,9 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   const featured = articles[0] ?? null;
   const grid = articles.slice(1);
   const sidebar = sidebarArticles;
-  const displayName = category?.name ?? name;
+  const displayName = normalizeCategoryName(category?.name ?? name);
   const meta = getCategoryMeta(displayName);
-  const categorySlug = name.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and");
+  const categorySlug = toCategorySlug(name);
   const seo = <SeoHead title={`${displayName} News | NewsSA`} description={`The latest ${displayName} news and updates from News South Africa.`} path={`/category/${categorySlug}`} keywords={[`${displayName} news`, "NewsSA"]} breadcrumbs={[{ name: "Home", path: "/" }, { name: displayName, path: `/category/${categorySlug}` }]} />;
 
   useEffect(() => { window.scrollTo(0, 0); setPage(1); }, [name]);
@@ -2457,10 +2510,7 @@ function pageFromPath(pathname: string): Page {
   const categoryMatch = pathname.match(/^\/category\/([^/]+)\/?$/);
   if (categoryMatch) {
     const slug = decodeURIComponent(categoryMatch[1]);
-    const knownNames: Record<string, string> = {
-      "leadership-and-ideas": "Leadership & Ideas",
-    };
-    return { type: "category", name: knownNames[slug] ?? slug };
+    return { type: "category", name: normalizeCategoryName(slug) };
   }
 
   const articleMatch = pathname.match(/^\/article\/(\d+)\/?$/);
@@ -2475,7 +2525,7 @@ function pageFromPath(pathname: string): Page {
 function pagePath(page: Page): string {
   if (page.type === "home") return "/";
   if (page.type === "category") {
-    const slug = page.name.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and");
+    const slug = toCategorySlug(page.name);
     return `/category/${slug}`;
   }
   if (page.type === "article") return `/article/${page.id}`;

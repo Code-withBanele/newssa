@@ -52,3 +52,36 @@ CREATE TABLE IF NOT EXISTS newsletter_subscribers (
 CREATE UNIQUE INDEX IF NOT EXISTS newsletter_active_email_idx
   ON newsletter_subscribers(email) WHERE status = 'active';
 CREATE INDEX IF NOT EXISTS newsletter_user_id_idx ON newsletter_subscribers(user_id);
+
+CREATE TABLE IF NOT EXISTS content_distribution_jobs (
+  id BIGSERIAL PRIMARY KEY,
+  wordpress_post_id BIGINT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'wordpress' CHECK (source IN ('wordpress')),
+  title TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  excerpt TEXT,
+  article_url TEXT NOT NULL,
+  featured_image_url TEXT,
+  category TEXT,
+  platform_list TEXT[] NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'processing', 'completed', 'partial', 'failed')),
+  dispatch_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (wordpress_post_id, source)
+);
+CREATE INDEX IF NOT EXISTS content_distribution_jobs_status_idx ON content_distribution_jobs(status);
+
+CREATE TABLE IF NOT EXISTS content_distribution_publications (
+  id BIGSERIAL PRIMARY KEY,
+  job_id BIGINT NOT NULL REFERENCES content_distribution_jobs(id) ON DELETE CASCADE,
+  platform TEXT NOT NULL CHECK (platform IN ('facebook', 'instagram', 'linkedin', 'x')),
+  status TEXT NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'scheduled', 'published', 'failed', 'skipped')),
+  external_id TEXT,
+  publish_url TEXT,
+  response_payload JSONB,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (job_id, platform)
+);
+CREATE INDEX IF NOT EXISTS content_distribution_publications_job_idx ON content_distribution_publications(job_id);

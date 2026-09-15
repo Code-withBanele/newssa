@@ -1,5 +1,5 @@
-import { randomBytes, timingSafeEqual } from "node:crypto";
-import { createHmac } from "node:crypto";
+import { randomBytes, timingSafeEqual, createHmac } from "node:crypto";
+import { assertMaxString, RequestValidationError } from "./security.js";
 
 export const PLATFORM_OPTIONS = ["facebook", "instagram", "linkedin", "x"] as const;
 export type SocialPlatform = (typeof PLATFORM_OPTIONS)[number];
@@ -28,12 +28,46 @@ export interface PlatformRow {
   status: string;
 }
 
+export interface ValidatedCallback {
+  jobId: number;
+  platform: SocialPlatform;
+  status: PublicationStatus;
+  externalId: string | null;
+  publishUrl: string | null;
+  idempotencyKey: string | null;
+}
+
 export const DEFAULT_PLATFORM_LIST = "facebook,instagram,linkedin,x";
 
 export function normalizePlatformName(value: string | null | undefined): SocialPlatform | null {
   const normalized = String(value ?? "").trim().toLowerCase();
   if (!normalized) return null;
   return PLATFORM_OPTIONS.includes(normalized as SocialPlatform) ? (normalized as SocialPlatform) : null;
+}
+
+export function validateSocialStatusPayload(payload: any): ValidatedCallback {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) throw new RequestValidationError(400, "A callback object is required.");
+  const event = assertMaxString(payload.event, "Event", 128, true);
+  if (event !== "content.distribution.updated") throw new RequestValidationError(400, "Invalid callback event.");
+  if (payload.version !== undefined && payload.version !== 1) throw new RequestValidationError(400, "Invalid callback version.");
+  const rawJobId = payload.job_id ?? payload.jobId ?? payload.id;
+  if (typeof rawJobId === "string" && rawJobId.length > 32) throw new RequestValidationError(413, "Job id is too long.");
+  const jobId = Number(rawJobId);
+  if (!Number.isSafeInteger(jobId) || jobId <= 0) throw new RequestValidationError(400, "A valid distribution job id is required.");
+  const platform = normalizePlatformName(assertMaxString(payload.platform, "Platform", 32, true));
+  if (!platform) throw new RequestValidationError(400, "Unsupported platform.");
+  const status = assertMaxString(payload.status, "Status", 32, true)?.toLowerCase() as PublicationStatus;
+  if (!["queued", "scheduled", "published", "failed", "skipped"].includes(status)) throw new RequestValidationError(400, "Unsupported publication status.");
+  const externalId = assertMaxString(payload.external_id ?? payload.externalId, "External id", 256);
+  const publishUrl = assertMaxString(payload.publish_url ?? payload.publishUrl, "Publish URL", 2048);
+  if (publishUrl && !isValidHttpUrl(publishUrl)) throw new RequestValidationError(400, "Publish URL must be HTTP or HTTPS.");
+  const idempotencyKey = assertMaxString(payload.idempotency_key ?? payload.idempotencyKey, "Idempotency key", 256);
+  assertMaxString(payload.event_id ?? payload.eventId, "Event id", 256);
+  if (payload.timestamp !== undefined) assertMaxString(payload.timestamp, "Timestamp", 64, true);
+  if (payload.response_payload !== undefined && (!payload.response_payload || typeof payload.response_payload !== "object" || Array.isArray(payload.response_payload))) {
+    throw new RequestValidationError(400, "Response payload must be an object.");
+  }
+  return { jobId, platform, status, externalId, publishUrl, idempotencyKey };
 }
 
 export function getEnabledPlatforms(envValue = process.env.CONTENT_DISTRIBUTION_PLATFORMS ?? DEFAULT_PLATFORM_LIST): SocialPlatform[] {
@@ -177,32 +211,34 @@ export function calculateJobStatus(platformRows: PlatformRow[], jobFailed = fals
   return "queued";
 }
 
-export function buildDispatchPayload(jobId: number, article: NormalizedArticle, enabledPlatforms: SocialPlatform[]) {
-  const baseUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "https://localhost:3000";
+export interface DispatchPublication {
+  platform: SocialPlatform;
+  publicationId: number;
+}
+
+export function buildDispatchPayload(jobId: number, article: NormalizedArticle, publications: DispatchPublication[], createdAt = new Date().toISOString()) {
+  const idempotencyKey = `newssa-distribution-${jobId}`;
   return {
-    event: "distribution.job.created",
-    job_id: jobId,
-    article: {
-      wordpress_post_id: article.wordpressPostId,
+    event: "content.distribution.requested",
+    version: 1,
+    idempotency_key: idempotencyKey,
+    job: {
+      id: String(jobId),
+      article_id: String(article.wordpressPostId),
+      canonical_url: article.articleUrl,
       title: article.title,
       excerpt: article.excerpt,
-      article_url: article.articleUrl,
       featured_image_url: article.featuredImage,
-      category: article.category,
-      published_at: article.publishedAt,
     },
-    distribution: {
-      platforms: enabledPlatforms,
-      schedule: {
-        enabled: false,
-        timezone: "Africa/Johannesburg",
-        posts_per_day: 1,
-      },
-    },
+    platforms: publications.map(publication => ({
+      platform: publication.platform,
+      publication_id: String(publication.publicationId),
+    })),
     callback: {
-      url: `${baseUrl}/api/automation/social-status`,
-      job_id: jobId,
+      event: "content.distribution.updated",
+      job_id: String(jobId),
     },
+    created_at: createdAt,
   };
 }
 
@@ -216,18 +252,43 @@ export function getWebhookSecret(): string | null {
   return value || null;
 }
 
-export function verifyWebhookSignature(rawBody: string, providedSignature: string | string[] | undefined): boolean {
+export function getTimestampToleranceSeconds(): number {
+  const configured = Number(process.env.CONTENT_DISTRIBUTION_TIMESTAMP_TOLERANCE_SECONDS ?? 300);
+  return Number.isFinite(configured) && configured > 0 ? configured : 300;
+}
+
+export function isFreshTimestamp(timestamp: string | number, now = Date.now()): boolean {
+  const timestampSeconds = Number(timestamp);
+  if (!Number.isFinite(timestampSeconds)) return false;
+  return Math.abs(Math.floor(now / 1000) - timestampSeconds) <= getTimestampToleranceSeconds();
+}
+
+export function createWebhookSignature(secret: string, timestamp: string, rawBody: string): string {
+  return `sha256=${createHmac("sha256", secret).update(`${timestamp}.${rawBody}`, "utf8").digest("hex")}`;
+}
+
+export function getRawRequestBody(request: { body?: unknown; rawBody?: unknown }): string | null {
+  if (typeof request.rawBody === "string") return request.rawBody;
+  if (request.rawBody instanceof Uint8Array) return Buffer.from(request.rawBody).toString("utf8");
+  if (typeof request.body === "string") return request.body;
+  return null;
+}
+
+export function verifyWebhookSignature(
+  rawBody: string,
+  providedSignature: string | string[] | undefined,
+  timestamp: string | number | undefined,
+  now = Date.now(),
+): boolean {
   const secret = getWebhookSecret();
-  if (!secret) return true;
+  if (!secret || timestamp === undefined || !isFreshTimestamp(timestamp, now)) return false;
   const candidate = Array.isArray(providedSignature) ? providedSignature[0] : providedSignature;
   if (!candidate) return false;
-  const expected = createHmac("sha256", secret).update(rawBody, "utf8").digest("hex");
-  const actual = String(candidate).replace(/^sha256=/i, "");
-  return constantTimeEquals(expected, actual);
+  return constantTimeEquals(createWebhookSignature(secret, String(timestamp), rawBody), String(candidate));
 }
 
 export function buildJobErrorResponse(error: unknown) {
-  return { success: false, error: error instanceof Error ? error.message : "Unexpected server error." };
+  return { success: false, error: "Unable to process the content distribution request." };
 }
 
 export function createEventId(): string {

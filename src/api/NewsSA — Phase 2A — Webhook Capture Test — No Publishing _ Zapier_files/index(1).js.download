@@ -1,0 +1,428 @@
+(()=>{var Ze=Object.defineProperty;var he=Object.getOwnPropertySymbols;var $e=Object.prototype.hasOwnProperty,Ve=Object.prototype.propertyIsEnumerable;var ue=(t,i,e)=>i in t?Ze(t,i,{enumerable:!0,configurable:!0,writable:!0,value:e}):t[i]=e,fe=(t,i)=>{for(var e in i||(i={}))$e.call(i,e)&&ue(t,e,i[e]);if(he)for(var e of he(i))Ve.call(i,e)&&ue(t,e,i[e]);return t};var y=(t,i,e)=>new Promise((a,o)=>{var H=m=>{try{s(e.next(m))}catch(L){o(L)}},O=m=>{try{s(e.throw(m))}catch(L){o(L)}},s=m=>m.done?a(m.value):Promise.resolve(m.value).then(H,O);s((e=e.apply(t,i)).next())});var ge=`
+/* Container - ensures proper stacking context */
+#zapier-chat-container {
+  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  /* line-height removed \u2014 let Zinnia Body1-multiline handle typography */
+  box-sizing: border-box;
+}
+
+#zapier-chat-container *,
+#zapier-chat-container *::before,
+#zapier-chat-container *::after {
+  box-sizing: border-box;
+}
+
+/* Launcher button - circle by default, expands to oval on hover */
+.zapier-chat-launcher {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50px;
+  background: #FFFDF9; /* Zinnia: --zds-background-weaker */
+  border: 1px solid #D7D3C9; /* Zinnia: --zds-stroke-weaker */
+  cursor: pointer;
+  box-shadow: 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  transition: width 0.25s ease, gap 0.25s ease, padding 0.25s ease, box-shadow 0.2s ease;
+  padding: 12px;
+  outline: none;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+/* "Copilot" label \u2014 hidden by default, revealed on hover */
+.zapier-chat-launcher-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4F4844; /* Zinnia: --zds-text-default */
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-width 0.3s ease, opacity 0.2s ease 0.05s;
+}
+
+.zapier-chat-launcher:hover {
+  width: 116px;
+  padding: 12px 10px 12px 8px;
+  gap: 8px;
+  box-shadow: 0 4px 8px 0 rgba(32, 21, 21, 0.16);
+}
+
+.zapier-chat-launcher:hover .zapier-chat-launcher-label {
+  max-width: 80px;
+  opacity: 1;
+}
+
+.zapier-chat-launcher:focus {
+  box-shadow: 0 0 0 3px rgba(255, 79, 0, 0.2), 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+}
+
+/* Faux Pilot (Support) chat launcher - purple brand variant. A round icon
+   button that opens the faux-pilot pill menu; the labels
+   ("Chat with Support" / "Screenshare with Support") live on the pills. */
+.zapier-chat-launcher--faux-pilot {
+  background: var(--zds-ui-primary, #847dfe);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+}
+
+.zapier-chat-launcher--faux-pilot:hover {
+  background: var(--zds-ui-primary-stronger, #695be8);
+  box-shadow: 0 4px 8px 0 rgba(32, 21, 21, 0.16);
+  /* Round icon \u2014 opens the pill menu; no oval expansion */
+  width: 48px;
+  padding: 12px;
+  gap: 0;
+}
+
+.zapier-chat-launcher--faux-pilot:focus {
+  box-shadow: 0 0 0 3px rgba(132, 125, 254, 0.35), 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+}
+
+.zapier-chat-launcher--faux-pilot svg {
+  color: #ffffff;
+  fill: #ffffff;
+}
+
+/* Copilot launcher - solid purple, AI gradient on hover (matches editor Copilot) */
+.zapier-chat-launcher--copilot {
+  background: var(--zds-ui-primary-stronger, #695be8);
+  border: none;
+  color: #ffffff;
+  box-shadow: 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+  /* Round icon \u2014 opens the pane on click; no oval label expansion */
+  width: 48px;
+  padding: 12px;
+  gap: 0;
+}
+
+/* Gradient overlay cross-faded on hover (gradients can't transition directly) */
+.zapier-chat-launcher--copilot::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    140deg,
+    #ffd16e 0%,
+    #fea048 26%,
+    #ff7f24 39%,
+    #ff4f00 50%,
+    #ff5789 61%,
+    #f589dc 74%,
+    #bbbce3 100%
+  );
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.zapier-chat-launcher--copilot:hover::before,
+.zapier-chat-launcher--copilot.zapier-chat-launcher--pills-open::before {
+  opacity: 1;
+}
+
+.zapier-chat-launcher--copilot:hover,
+.zapier-chat-launcher--copilot.zapier-chat-launcher--pills-open,
+.zapier-chat-launcher--copilot.zapier-chat-launcher--pills-open:hover {
+  /* Override the base hover/pills-open sizing; keep the round 48px icon */
+  box-shadow: 0 4px 8px 0 rgba(32, 21, 21, 0.16);
+  width: 48px;
+  padding: 12px;
+  gap: 0;
+}
+
+.zapier-chat-launcher--copilot:focus {
+  box-shadow: 0 0 0 3px rgba(132, 125, 254, 0.35), 0 2px 4px 0 rgba(32, 21, 21, 0.12);
+}
+
+/* Keep the glyph above the gradient overlay and force it white in both states */
+.zapier-chat-launcher--copilot svg {
+  position: relative;
+  z-index: 1;
+  color: #ffffff;
+  fill: #ffffff;
+}
+
+.zapier-chat-launcher:active {
+  transform: scale(0.98);
+}
+
+.zapier-chat-launcher svg {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  /* Gradient fill is defined inline in the SVG */
+}
+
+/* Chat pane - expanded state */
+/* Anchored to bottom-right, drag-resizable from left edge */
+.zapier-chat-pane {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 410px;
+  height: calc(100vh - 100px);
+  max-height: min(800px, calc(100vh - 48px)); /* Cap at 800px on large screens */
+  min-width: 380px;
+  max-width: 50vw;
+  background: white;
+  border: 1px solid #D7D3C9; /* Zinnia: --zds-stroke-weaker */
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  z-index: 2147483646; /* Slightly below launcher so button stays on top */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: zapier-chat-slide-in 0.2s ease-out;
+  transition: width 0.25s ease, height 0.25s ease;
+}
+
+/* Disable transitions while drag-resizing */
+.zapier-chat-pane.is-dragging {
+  transition: none;
+  user-select: none;
+}
+
+/* Resize handle - left edge of pane */
+.zapier-chat-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Subtle visual indicator: thin line on the handle */
+.zapier-chat-resize-handle::after {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 32px;
+  border-radius: 1px;
+  background: #D7D3C9; /* Zinnia: --zds-stroke-weaker */
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.zapier-chat-resize-handle:hover::after,
+.zapier-chat-pane.is-dragging .zapier-chat-resize-handle::after {
+  opacity: 1;
+}
+
+@keyframes zapier-chat-slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+
+/* Chat body - contains the iframe */
+.zapier-chat-body {
+  flex: 1;
+  overflow: hidden;
+  padding: 0;
+  background: #fafafa; /* Zinnia: --zds-background-default */
+  position: relative;
+}
+
+/* Iframe */
+.zapier-chat-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Loading indicator */
+.zapier-chat-loading {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: #fafafa; /* Zinnia: --zds-background-default */
+  z-index: 1;
+}
+
+.zapier-chat-loading-spinner {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  border: 4px solid #88827e; /* Zinnia: --zds-gray-warm-6 */
+  border-right-color: transparent;
+  border-radius: 50%;
+  opacity: 0.7;
+  animation: zapier-chat-spin 3.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .zapier-chat-loading-spinner { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .zapier-chat-loading-spinner { animation: zapier-chat-spin 750ms linear infinite; }
+}
+
+.zapier-chat-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes zapier-chat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Hidden state */
+.zapier-chat-hidden {
+  display: none !important;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 480px) {
+  .zapier-chat-pane {
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 100vw;
+    min-width: 0;
+    max-width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+  }
+
+  /* Hide resize handle on mobile \u2014 full-width pane */
+  .zapier-chat-resize-handle {
+    display: none;
+  }
+
+  .zapier-chat-launcher {
+    bottom: 16px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
+  }
+
+}
+
+/* Hide resize handle on medium screens \u2014 not enough drag range to be useful */
+@media (min-width: 481px) and (max-width: 899px) {
+  .zapier-chat-resize-handle {
+    display: none;
+  }
+}
+
+/* Keep launcher expanded as oval when pills are open */
+.zapier-chat-launcher--pills-open,
+.zapier-chat-launcher--pills-open:hover {
+  width: 116px;
+  padding: 12px 10px 12px 8px;
+  gap: 8px;
+  box-shadow: 0 4px 8px 0 rgba(32, 21, 21, 0.16);
+}
+
+.zapier-chat-launcher--pills-open .zapier-chat-launcher-label {
+  max-width: 80px;
+  opacity: 1;
+}
+
+/* Faux Pilot's launcher is an icon-only round button (no label), so keep it
+   round when its pill menu is open instead of expanding to an empty oval. */
+.zapier-chat-launcher--faux-pilot.zapier-chat-launcher--pills-open,
+.zapier-chat-launcher--faux-pilot.zapier-chat-launcher--pills-open:hover {
+  width: 48px;
+  padding: 12px;
+  gap: 0;
+}
+
+/* Pill menu - beside the 48px round launcher: 24px margin + 48px + 8px gap */
+.zapier-chat-pill-menu {
+  position: fixed;
+  bottom: 24px;
+  right: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  z-index: 2147483647;
+  animation: zapier-chat-pills-in 0.15s ease-out;
+}
+
+@keyframes zapier-chat-pills-in {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.zapier-chat-pill {
+  height: 24px;
+  padding: 0 8px;
+  background: #FFFDF9;
+  border: 1px solid #B5B2AA;
+  border-radius: 4px;
+  font-family: 'Inter', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #695BE8;
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(32, 21, 21, 0.08);
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  outline: none;
+}
+
+.zapier-chat-pill:hover {
+  background: #F5F3EB; /* Zinnia: --zds-background-stronger */
+  box-shadow: 0 2px 6px rgba(32, 21, 21, 0.12);
+}
+
+.zapier-chat-pill:focus {
+  box-shadow: 0 0 0 3px rgba(105, 91, 232, 0.2);
+}
+
+
+`;var me=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M18.5 7V16.5H12.17L9.22998 20H13.03L14.71 22H17V20H23V7H18.5Z" fill="currentColor"/>
+  <path d="M17 15V2H1V15H7V18H8.95L11.47 15H17Z" fill="currentColor"/>
+</svg>`;var xe=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 27 27" fill="none">
+  <path d="M5.27656 11.962H5.78938C9.18806 11.962 11.9432 9.20681 11.9432 5.80813V5.29531H14.6099V5.80813C14.6099 9.20681 17.3651 11.962 20.7637 11.962H21.2766V14.6286H20.7637C17.3651 14.6286 14.6099 17.3838 14.6099 20.7825V21.2953H11.9432V20.7825C11.9432 17.3838 9.18806 14.6286 5.78938 14.6286H5.27656V11.962Z" fill="currentColor"/>
+  <path d="M2.68194 11.9917H0C0.600788 5.66455 5.6231 0.625965 11.9428 0V2.68328C7.09737 3.28605 3.26052 7.13872 2.68194 11.9917Z" fill="currentColor"/>
+  <path d="M0.0113565 14.6583H2.6962C3.32098 19.4574 7.13556 23.2544 11.943 23.8524V26.5356C5.6613 25.9135 0.661443 20.9317 0.0113565 14.6583Z" fill="currentColor"/>
+  <path d="M14.6096 26.535C20.8883 25.9101 25.8849 20.9296 26.5348 14.6583H23.8499C23.2254 19.4552 19.414 23.251 14.6096 23.8515V26.535Z" fill="currentColor"/>
+  <path d="M26.5461 11.9917C25.9455 5.66664 20.9263 0.629288 14.6095 0.000620525V2.68406C19.452 3.28936 23.2858 7.14081 23.8642 11.9917H26.5461Z" fill="currentColor"/>
+</svg>`,ve=`<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+  <path d="M10 22H12.11L15.47 18H22V2H2V18H10V22Z" fill="currentColor"/>
+</svg>`;var We="https://static.ada.support/embed2.js",Be="__ada",we="zapier-chat-hide-ada-launcher",Ge="#ada-button-frame { display: none !important; }",be="zapier.com",je="zapier-sales-generative",Ye="zapier-sales-generative-staging",qe="6a4677a641928f54ada27a4d",Xe="6a6bd3d26e103528c9bc5d9f",Ke="generativeHandoff",S=null;function Ee(){let t=window.location.hostname;return t===be||t.endsWith(`.${be}`)}function Qe(){return Ee()?je:Ye}function Je(){return Ee()?qe:Xe}function et(){var i,e;let t=fe({},(e=(i=window.zapierCopilotWidget)==null?void 0:i.config)!=null?e:{});return delete t.app_id,delete t.user_hash,t}var V=null;function Ce(){return window.adaEmbed?Promise.resolve():(V||(V=new Promise((t,i)=>{let e=document.createElement("script");e.id=Be,e.setAttribute("data-lazy",""),e.src=We,e.async=!0,e.addEventListener("load",()=>t()),e.addEventListener("error",()=>{e.remove(),V=null,i(new Error("Ada embed script failed to load"))}),document.head.appendChild(e)})),V)}function _e(){Ce().catch(()=>{})}function tt(){if(document.getElementById(we))return;let t=document.createElement("style");t.id=we,t.textContent=Ge,document.head.appendChild(t)}function it(t){return y(this,null,function*(){let i=yield t.getInfo().catch(()=>{});i!=null&&i.isDrawerOpen||(yield t.toggle())})}function nt(t){return y(this,null,function*(){yield Ce(),tt();let i=window.adaEmbed;if(!i)throw new Error("Ada embed script loaded but adaEmbed is unavailable");let e=et(),a=Je();yield i.start({handle:Qe(),greeting:a,metaFields:e,eventCallbacks:{[Ke]:()=>t.onSupportHandoff()},toggleCallback:o=>t.onDrawerToggle(o),adaReadyCallback:()=>{var o;(o=window.adaEmbed)==null||o.reset({greeting:a,metaFields:e})}})})}function ye(t){return y(this,null,function*(){S||(S=nt(t).catch(e=>{throw S=null,e})),yield S;let i=window.adaEmbed;i&&(yield it(i))})}function ze(){return y(this,null,function*(){let t=window.adaEmbed;if(!(!t||!S)){S=null;try{yield t.deleteHistory(),yield t.reset({resetChatHistory:!0}),yield t.stop()}catch(i){}}})}function Se(t){let i=typeof t.copilot_conversation_id=="string"?t.copilot_conversation_id:null;if(!i)return null;let e=t.last_activity_at?new Date(t.last_activity_at):null;return!e||Date.now()-e.getTime()>864e5?null:i}var at="supportfrontend",ot="web_analytics.tracking.user_interaction.UserInteractionEvent",rt="support_copilot_widget",lt={shown:"view",open:"open",close:"close"};function Ae(t){if(typeof document=="undefined")return null;let i=t.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"),e=document.cookie.match(new RegExp("(?:^|;\\s*)"+i+"=([^;]*)"));return e?decodeURIComponent(e[1]):null}function st(){return typeof crypto!="undefined"&&typeof crypto.randomUUID=="function"?crypto.randomUUID():"xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,t=>{let i=Math.random()*16|0;return(t==="x"?i:i&3|8).toString(16)})}function A(t,i,e,a=rt){try{let o={system_name:at,interaction_name:a,event_action:lt[i],option_selected:e,url_address:window.location.origin+window.location.pathname,iframe_flag:!1,popup_flag:!1,visitor_id:Ae("visitor_id"),session_id:Ae("session_id"),event_id:st()};fetch(`${t}/api/v4/tracking/event/`,{method:"POST",headers:{"Content-Type":"application/json"},keepalive:!0,body:JSON.stringify({subject:ot,properties:o})}).catch(()=>{})}catch(o){}}var He="zapier-chat-host-url";var h={LAUNCHER:"launcher",ASK_COPILOT:"ask_copilot",CHAT_WITH_SUPPORT:"chat_with_support",SCREENSHARE_WITH_SUPPORT:"screenshare_with_support",RESUME_LIVE_CHAT:"resume_live_chat",HANDOFF_REOPEN:"handoff_reopen",SALES_TO_COPILOT_HANDOFF:"sales_to_copilot_handoff",CHAT_WITH_SALES:"chat_with_sales",COPILOT_TO_SALES_HANDOFF:"copilot_to_sales_handoff"},r={hidden:"zapier-chat-hidden",launcher:"zapier-chat-launcher",launcherLabel:"zapier-chat-launcher-label",launcherCopilot:"zapier-chat-launcher--copilot",launcherFauxPilot:"zapier-chat-launcher--faux-pilot",launcherPillsOpen:"zapier-chat-launcher--pills-open",pane:"zapier-chat-pane",pillMenu:"zapier-chat-pill-menu",pill:"zapier-chat-pill",loading:"zapier-chat-loading",close:"zapier-chat-close"};function ct(){if(typeof window.ZAPIER_CHAT_ORIGIN=="string")return window.ZAPIER_CHAT_ORIGIN;let t=window.location.protocol,i=window.location.hostname;return t==="file:"?"http://localhost:9946":i.includes("vercel.app")||i.includes("vercel.zapier.com")||i.includes("vercel.zapier-deployment.com")?`${t}//${i}`:i.includes("zapier-staging.com")||i==="localhost"||i==="127.0.0.1"?i==="localhost"||i==="127.0.0.1"?`${t}//${i}:9946`:"https://zapier-staging.com":"https://zapier.com"}(function(){var de;if(window.ZapierChat){console.warn("[ZapierChat] Widget already initialized");return}let t=!1,i=null,e=null,a=null,o=null,H=h.LAUNCHER,O=null,s=ct(),m=(de=window.ZAPIER_CHAT_PATH)!=null?de:"",L=`${s}${m}`,I="support_copilot_widget",P=m==="",k=m.includes("faux-pilot"),C=P||k,q=window.location.pathname,X=q==="/editor"||q.startsWith("/editor/"),N=!1,f=null,K=!1,W=null,T=null,B=null,G=null,v=null,Q=!1;function Le(){if(document.getElementById("zapier-chat-font"))return;let n=document.createElement("link");n.id="zapier-chat-font",n.rel="stylesheet",n.href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",document.head.appendChild(n)}function Ie(){Le();let n=document.createElement("style");n.id="zapier-chat-styles",n.textContent=ge,document.head.appendChild(n)}function J(n){if(!o||!a)return;let c=a.querySelector(`.${r.loading}`);c&&(c.style.display="flex"),o.src=`${s}${n}`}function ee(){var n;(n=o==null?void 0:o.contentWindow)==null||n.postMessage({type:He,url:window.location.origin+window.location.pathname},s)}function te(){let n=window.location.origin+window.location.pathname;n!==O&&(O=n,A(s,"shown",h.LAUNCHER,I))}function j(){ee(),te()}let ie=!1;function ne(){if(ie)return;ie=!0,window.addEventListener("popstate",j);let n=history.pushState.bind(history);history.pushState=(...l)=>{n(...l),j()};let c=history.replaceState.bind(history);history.replaceState=(...l)=>{c(...l),j()}}function Pe(){i=document.createElement("div"),i.id="zapier-chat-container",e=document.createElement("button"),e.className=r.launcher,e.setAttribute("aria-label",C?"Open chat options":"Open Zapier Chat"),e.setAttribute("type","button"),k?(e.innerHTML=me,e.classList.add(r.launcherFauxPilot)):X?(e.innerHTML=ve,e.classList.add(r.launcherCopilot)):(e.innerHTML=xe,e.classList.add(r.launcherCopilot)),P?e.addEventListener("click",Fe):e.addEventListener("click",C?se:ae),a=document.createElement("div"),a.className=`${r.pane} ${r.hidden}`,a.setAttribute("role","dialog"),a.setAttribute("aria-label","Chat with Zapier"),window.addEventListener("message",d=>{var u,p,E,Z,$,g;if(d.origin===s)if(((u=d.data)==null?void 0:u.type)==="zapier-chat-close")D();else if(((p=d.data)==null?void 0:p.type)==="zapier-chat-minimize")Te();else if(((E=d.data)==null?void 0:E.type)==="zapier-chat-navigate"){let _=d.data.path;typeof _=="string"&&_.startsWith("/")&&J(_)}else if(((Z=d.data)==null?void 0:Z.type)==="zapier-chat-navigate-top"){let _=d.data.url;if(typeof _=="string"&&_.startsWith("/")){let pe=new URL(_,window.location.origin);pe.searchParams.set("next",window.location.href),window.location.href=pe.toString()}}else(($=d.data)==null?void 0:$.type)==="zapier-chat-open-sales"?(D(),oe(h.COPILOT_TO_SALES_HANDOFF)):((g=d.data)==null?void 0:g.type)==="zapier-chat-request-host-url"&&(ee(),ne())});let n=document.createElement("div");n.className="zapier-chat-resize-handle",n.setAttribute("aria-label","Resize chat pane");let c="zapier-chat-pane-width";try{let d=localStorage.getItem(c);if(d){let u=parseInt(d,10);u>=380&&u<=window.innerWidth*.5&&(a.style.width=`${u}px`)}}catch(d){}let l=!1,b=0;n.addEventListener("pointerdown",d=>{if(!a)return;d.preventDefault(),l=!0,b=a.getBoundingClientRect().right,a.classList.add("is-dragging"),n.setPointerCapture(d.pointerId)}),n.addEventListener("pointermove",d=>{if(!l||!a)return;let u=b-d.clientX,p=380,E=window.innerWidth*.5;u=Math.max(p,Math.min(E,u)),a.style.width=`${u}px`}),n.addEventListener("pointerup",d=>{if(!(!l||!a)){l=!1,a.classList.remove("is-dragging"),n.releasePointerCapture(d.pointerId);try{localStorage.setItem(c,String(a.offsetWidth))}catch(u){}}}),a.appendChild(n);let x=document.createElement("div");x.className="zapier-chat-body",o=document.createElement("iframe"),o.className="zapier-chat-iframe",o.setAttribute("title","Zapier Chat"),o.setAttribute("allow","clipboard-write"),o.style.cssText="width: 100%; height: 100%; border: none; display: block;";let U=document.createElement("div");if(U.className=r.loading,U.innerHTML='<div class="zapier-chat-loading-spinner" role="status"><span class="zapier-chat-sr-only">Loading</span></div>',o.addEventListener("load",()=>{U.style.display="none"}),x.appendChild(U),x.appendChild(o),a.appendChild(x),i.appendChild(e),C){f=document.createElement("div"),f.className=`${r.pillMenu} ${r.hidden}`;let d=[{variant:"copilot",id:"copilot",text:"Ask Copilot",onSelect:()=>{let p=v?`?conversationId=${encodeURIComponent(v)}`:"";w(`${s}/app/chat-widget/support-copilot${p}`,h.ASK_COPILOT)}},{variant:"copilot",id:"live-chat",text:"Chat with Support",hiddenUntilEligible:!0,onSelect:()=>{let p=new URLSearchParams({intent:"liveChat"});v&&p.set("conversationId",v),w(`${s}/app/chat-widget/support-copilot?${p.toString()}`,h.CHAT_WITH_SUPPORT)}},{variant:"copilot",id:"resume-live-chat",text:"Resume Live Chat",hiddenUntilEligible:!0,onSelect:()=>{B&&w(`${s}/app/chat-widget/support-copilot?conversationId=${encodeURIComponent(B)}`,h.RESUME_LIVE_CHAT)}},{variant:"copilot",id:"copilot-screenshare",text:"Screenshare with Support",hiddenUntilEligible:!0,onSelect:()=>{let p=new URLSearchParams({intent:"screenshare"});v&&p.set("conversationId",v),w(`${s}/app/chat-widget/support-copilot?${p.toString()}`,h.SCREENSHARE_WITH_SUPPORT)}},{variant:"copilot",id:"sales",text:"Chat with Sales",onSelect:()=>oe(h.CHAT_WITH_SALES)},{variant:"faux-pilot",id:"faux-chat",text:"Chat with Support",onSelect:()=>{w(`${s}/app/chat-widget/faux-pilot`)}},{variant:"faux-pilot",id:"faux-screenshare",text:"Screenshare with Support",hiddenUntilEligible:!0,onSelect:()=>{w(`${s}/app/chat-widget/faux-pilot?intent=screenshare`)}}],u=k?"faux-pilot":"copilot";d.filter(p=>p.variant===u).filter(p=>!(X&&p.id==="copilot")).forEach(({text:p,id:E,hiddenUntilEligible:Z,onSelect:$})=>{let g=document.createElement("button");g.className=r.pill,g.setAttribute("type","button"),g.textContent=p,g.addEventListener("click",()=>{z(),$()}),Z&&g.classList.add(r.hidden),E==="live-chat"&&(W=g),E==="resume-live-chat"&&(G=g),(E==="faux-screenshare"||E==="copilot-screenshare")&&(T=g),f.appendChild(g)}),i.appendChild(f)}i.appendChild(a),document.body.appendChild(i),P&&De()}function R(n=h.LAUNCHER){if(!t&&(t=!0,H=n,A(s,"open",n,I),o&&!o.src&&(o.src=L),e&&e.classList.add(r.hidden),a)){a.classList.remove(r.hidden);let c=a.querySelector(`.${r.close}`);c&&c.focus()}}function D(){t&&(t=!1,A(s,"close",H,I),a&&a.classList.add(r.hidden),e&&(e.classList.remove(r.hidden),e.focus()),P&&o&&(o.src="about:blank"))}function Te(){t&&(t=!1,A(s,"close",H,I),a&&a.classList.add(r.hidden),e&&(e.classList.remove(r.hidden),e.focus()))}function ae(){t?D():R()}function w(n,c=h.LAUNCHER){if(!o||!a){R(c);return}if(o.src!==n){let l=a.querySelector(`.${r.loading}`);l&&(l.style.display="flex"),o.src=n}R(c)}function oe(n=h.CHAT_WITH_SALES){A(s,"open",n,I),ye({onSupportHandoff:Re,onDrawerToggle:ke}).catch(c=>{console.error("[ZapierChat] Failed to open Ada Sales chat",c)})}function Re(){ze(),w(`${s}/app/chat-widget/support-copilot`,h.SALES_TO_COPILOT_HANDOFF)}function Oe(){w(`${s}/app/chat-widget/support-copilot`,h.SALES_TO_COPILOT_HANDOFF)}function ke(n){e&&e.classList.toggle(r.hidden,n||t)}function Ne(){Q||(Q=!0,fetch(`${s}/api/supportfrontend/v1/proxy/copilot-conversation`,{credentials:"include"}).then(n=>n.ok?n.json():null).then(n=>{v=Se(n)}).catch(()=>{}))}function Y(){N||(N=!0,P&&(_e(),Ne()),f&&f.classList.remove(r.hidden),e&&e.classList.add(r.launcherPillsOpen),setTimeout(()=>{document.addEventListener("click",re)},0))}function z(){N=!1,f&&f.classList.add(r.hidden),e&&e.classList.remove(r.launcherPillsOpen),document.removeEventListener("click",re)}function re(n){!f||!e||!f.contains(n.target)&&!e.contains(n.target)&&z()}let F=null;function M(){F!==null&&(clearTimeout(F),F=null)}function le(){M(),F=setTimeout(z,500)}function De(){e&&(e.addEventListener("mouseenter",()=>{M(),Y()}),e.addEventListener("mouseleave",le),f&&(f.addEventListener("mouseenter",M),f.addEventListener("mouseleave",le)))}function Fe(){M(),z();let n=v?`?conversationId=${encodeURIComponent(v)}`:"";w(`${s}/app/chat-widget/support-copilot${n}`,h.LAUNCHER)}function Me(){return y(this,null,function*(){var n;try{let c=yield fetch(`${s}/api/supportfrontend/v1/proxy/chat-widget-display-config`,{credentials:"include"});if(!c.ok)return;let l=yield c.json();if(k){(l==null?void 0:l.screenshareEligible)===!0&&T&&T.classList.remove(r.hidden);return}if(K=(l==null?void 0:l.liveChatEnabled)===!0,K){let b=(n=l==null?void 0:l.activeConversationId)!=null?n:null;b&&G?(B=b,G.classList.remove(r.hidden)):W&&W.classList.remove(r.hidden)}(l==null?void 0:l.screenshareEligible)===!0&&T&&T.classList.remove(r.hidden)}catch(c){}})}function se(){N?z():Y()}function Ue(){let n;try{n=new URLSearchParams(window.location.search)}catch(x){return}let c=n.get("zapier-chat-open");if(!c||!/^[a-z0-9-]+$/.test(c))return;let l=`/app/chat-widget/${c}`,b=n.get("zapier-chat-conversation");b&&/^[A-Za-z0-9_-]+$/.test(b)&&(l+=`?conversationId=${encodeURIComponent(b)}`),J(l),R(h.HANDOFF_REOPEN);try{let x=new URL(window.location.href);x.searchParams.delete("zapier-chat-open"),x.searchParams.delete("zapier-chat-conversation"),x.hash="",window.history.replaceState(null,"",x.toString())}catch(x){}}function ce(){Ie(),Pe(),C&&Me(),ne(),te(),Ue()}window.ZapierChat={open:C?Y:R,close:C?z:D,toggle:C?se:ae,openFromSalesHandoff:Oe},document.readyState==="loading"?document.addEventListener("DOMContentLoaded",ce):ce()})();})();

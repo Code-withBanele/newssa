@@ -1,8 +1,16 @@
 {
   "devCommand": "vite --port $PORT",
+  "crons": [
+    { "path": "/api/automation/detect-posts", "schedule": "*/15 * * * *" }
+  ],
   "rewrites": [
-    { "source": "/sitemap.xml", "destination": "/api/sitemap.xml" },
-    { "source": "/robots.txt", "destination": "/api/robots.txt" },
+    { "source": "/api/automation/create-job", "destination": "/api/automation?action=create-job" },
+    { "source": "/api/automation/detect-posts", "destination": "/api/automation?action=detect-posts" },
+    { "source": "/api/automation/social-status", "destination": "/api/automation?action=social-status" },
+    { "source": "/api/robots.txt", "destination": "/api/seo?route=robots" },
+    { "source": "/api/sitemap.xml", "destination": "/api/seo?route=sitemap" },
+    { "source": "/sitemap.xml", "destination": "/api/seo?route=sitemap" },
+    { "source": "/robots.txt", "destination": "/api/seo?route=robots" },
     { "source": "/about", "destination": "/" },
     { "source": "/privacy-policy", "destination": "/" },
     { "source": "/cookie-policy", "destination": "/" }

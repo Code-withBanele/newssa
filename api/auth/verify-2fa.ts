@@ -3,12 +3,16 @@ import { createHash } from "node:crypto";
 import { sql, requireDatabaseConfig } from "../_lib/db.js";
 import { createSession, setSessionCookie, verifyChallenge } from "../_lib/auth.js";
 import { jsonBody, method } from "../_lib/http.js";
+import { assertMaxString, requireRateLimit, RequestValidationError } from "../_lib/security.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;
+  if (!requireRateLimit(req, res, "auth-verify-2fa", 20, 60_000)) return;
   try {
     requireDatabaseConfig();
     const { challenge, token } = jsonBody(req);
+    assertMaxString(challenge, "Challenge", 4096, true);
+    assertMaxString(token, "Verification code", 6, true);
     if (typeof challenge !== "string" || !/^\d{6}$/.test(String(token))) return res.status(400).json({ error: "A valid verification code is required." });
     const claims = await verifyChallenge(challenge);
     if (claims.purpose !== "registration" && claims.purpose !== "login") return res.status(400).json({ error: "Invalid verification challenge." });
@@ -29,7 +33,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const session = await createSession(user.id);
     setSessionCookie(res, session);
     return res.status(200).json({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(error.statusCode).json({ error: error.message });
     return res.status(401).json({ error: "Verification failed." });
   }
 }

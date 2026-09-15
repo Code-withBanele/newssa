@@ -1,0 +1,1 @@
+(()=>{(function(){let n=document.location.hostname.includes("zapier.com"),t=document.location.hostname.includes("zapier-staging.com"),c=`${n?"https://zapier.com":t?"https://zapier-staging.com":""}/app/popup-chat`,o=null,p=()=>{o&&!o.closed?o.focus():o=window.open(c,"_blank","width=400,height=730,toolbar=no,menubar=no,scrollbars=no")};window.openPopupChat=p})();})();

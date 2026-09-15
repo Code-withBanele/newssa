@@ -23,7 +23,7 @@ export function parseCookies(cookieHeader = "") {
 }
 
 export function setSessionCookie(res: { setHeader(name: string, value: string): void }, token: string, maxAge = SESSION_DAYS * 86400) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : "";
+  const secure = process.env.NODE_ENV === "development" ? "" : "; Secure";
   res.setHeader("Set-Cookie", `${SESSION_COOKIE}=${token}; Path=/; Max-Age=${maxAge}; HttpOnly${secure}; SameSite=Lax`);
 }
 

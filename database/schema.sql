@@ -85,3 +85,10 @@ CREATE TABLE IF NOT EXISTS content_distribution_publications (
   UNIQUE (job_id, platform)
 );
 CREATE INDEX IF NOT EXISTS content_distribution_publications_job_idx ON content_distribution_publications(job_id);
+
+CREATE TABLE IF NOT EXISTS automation_checkpoints (
+  checkpoint_key TEXT PRIMARY KEY,
+  checkpoint_at TIMESTAMPTZ NOT NULL,
+  checkpoint_post_id BIGINT NOT NULL DEFAULT 0 CHECK (checkpoint_post_id >= 0),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

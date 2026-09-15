@@ -4,15 +4,18 @@ import { sql, requireDatabaseConfig } from "../_lib/db.js";
 import { signChallenge, verifyChallenge } from "../_lib/auth.js";
 import { sendVerificationCode } from "../_lib/email.js";
 import { jsonBody, method } from "../_lib/http.js";
+import { assertMaxString, requireRateLimit, RequestValidationError } from "../_lib/security.js";
 
 const RESEND_COOLDOWN_SECONDS = 60;
 const RESEND_OTP_TEMPLATE_ID = "8864c140-a061-44e6-bf2c-f81190eca3cc";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;
+  if (!requireRateLimit(req, res, "auth-resend-verification", 5, 60_000)) return;
   try {
     requireDatabaseConfig();
     const { challenge } = jsonBody(req);
+    assertMaxString(challenge, "Challenge", 4096, true);
     if (typeof challenge !== "string") return res.status(400).json({ error: "Unable to resend verification code." });
     const claims = await verifyChallenge(challenge);
     if (claims.purpose !== "registration" && claims.purpose !== "login") return res.status(400).json({ error: "Unable to resend verification code." });
@@ -41,6 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sendVerificationCode(user.email, code, RESEND_OTP_TEMPLATE_ID);
     return res.status(200).json({ challenge: await signChallenge({ userId: user.id, purpose: claims.purpose as string }, "30m") });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && error.name === "EmailDeliveryError") return res.status(503).json({ error: "Email delivery is temporarily unavailable." });
     return res.status(400).json({ error: "Unable to resend verification code." });
   }

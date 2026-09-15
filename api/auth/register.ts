@@ -4,13 +4,19 @@ import { sql, requireDatabaseConfig } from "../_lib/db.js";
 import { hashPassword, signChallenge } from "../_lib/auth.js";
 import { requireEmailConfig, sendVerificationCode } from "../_lib/email.js";
 import { jsonBody, method, validEmail } from "../_lib/http.js";
+import { assertMaxString, requireRateLimit, RequestValidationError } from "../_lib/security.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;
+  if (!requireRateLimit(req, res, "auth-register", 5, 60_000)) return;
   let createdUserId: number | null = null;
   try {
     requireDatabaseConfig();
     const { email, firstName, lastName, password } = jsonBody(req);
+    assertMaxString(email, "Email", 254, true);
+    assertMaxString(firstName, "First name", 100, true);
+    assertMaxString(lastName, "Last name", 100, true);
+    assertMaxString(password, "Password", 1024, true);
     if (!validEmail(email) || typeof firstName !== "string" || typeof lastName !== "string" || typeof password !== "string" || password.length < 12) {
       return res.status(400).json({ error: "Provide a valid email, name, and password of at least 12 characters." });
     }
@@ -29,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const challenge = await signChallenge({ userId: result.rows[0].id, purpose: "registration" }, "30m");
     return res.status(201).json({ challenge });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && /duplicate key|unique/i.test(error.message)) return res.status(409).json({ error: "An account with that email already exists." });
     if (error instanceof Error && error.name === "EmailDeliveryError") {
       if (createdUserId !== null) await sql`DELETE FROM users WHERE id = ${createdUserId} AND email_verified = FALSE`;

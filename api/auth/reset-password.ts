@@ -3,12 +3,17 @@ import { createHash } from "node:crypto";
 import { sql, requireDatabaseConfig } from "../_lib/db.js";
 import { hashPassword, verifyChallenge } from "../_lib/auth.js";
 import { jsonBody, method } from "../_lib/http.js";
+import { assertMaxString, requireRateLimit, RequestValidationError } from "../_lib/security.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;
+  if (!requireRateLimit(req, res, "auth-reset-password", 10, 60_000)) return;
   try {
     requireDatabaseConfig();
     const { challenge, token, password } = jsonBody(req);
+    assertMaxString(challenge, "Challenge", 4096, true);
+    assertMaxString(token, "Verification code", 6, true);
+    assertMaxString(password, "Password", 1024, true);
     if (typeof challenge !== "string" || !/^\d{6}$/.test(String(token)) || typeof password !== "string" || password.length < 12) {
       return res.status(400).json({ error: "Enter a valid code and a password of at least 12 characters." });
     }
@@ -31,7 +36,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     await sql`UPDATE users SET password_hash = ${passwordHash}, verification_code_hash = NULL , verification_code_expires_at = NULL, verification_attempts = 0, updated_at = NOW() WHERE id = ${user.id}`;
     await sql`DELETE FROM sessions WHERE user_id = ${user.id}`;
     return res.status(204).end();
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(error.statusCode).json({ error: error.message });
     return res.status(400).json({ error: "Unable to reset password." });
   }
 }

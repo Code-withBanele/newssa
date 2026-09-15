@@ -4,13 +4,16 @@ import { sql, requireDatabaseConfig } from "../_lib/db.js";
 import { signChallenge } from "../_lib/auth.js";
 import { requireEmailConfig, sendVerificationCode } from "../_lib/email.js";
 import { jsonBody, method, validEmail } from "../_lib/http.js";
+import { assertMaxString, requireRateLimit, RequestValidationError } from "../_lib/security.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!method(req, res, "POST")) return;
+  if (!requireRateLimit(req, res, "auth-forgot-password", 5, 60_000)) return;
   try {
     requireDatabaseConfig();
     requireEmailConfig();
     const { email } = jsonBody(req);
+    assertMaxString(email, "Email", 254, true);
     if (!validEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
 
     const normalizedEmail = email.trim().toLowerCase();
@@ -32,6 +35,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     return res.status(200).json({ message: "If an account exists for that email, a verification code has been sent." });
   } catch (error) {
+    if (error instanceof RequestValidationError) return res.status(error.statusCode).json({ error: error.message });
     if (error instanceof Error && error.name === "EmailDeliveryError") return res.status(503).json({ error: "Email delivery is temporarily unavailable." });
     return res.status(500).json({ error: "Unable to process the password reset request." });
   }

@@ -1,4 +1,3 @@
-import { timingSafeEqual } from "node:crypto";
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 
 export const DEFAULT_JSON_BODY_LIMIT = 64 * 1024;
@@ -9,37 +8,6 @@ export class RequestValidationError extends Error {
     super(message);
     this.name = "RequestValidationError";
   }
-}
-
-function constantTimeTokenEquals(expected: string, actual: string): boolean {
-  const expectedBytes = Buffer.from(expected);
-  const actualBytes = Buffer.from(actual);
-  if (expectedBytes.length !== actualBytes.length) return false;
-  return timingSafeEqual(new Uint8Array(expectedBytes), new Uint8Array(actualBytes));
-}
-
-export function authorizeAutomationRequest(req: VercelRequest): "authorized" | "unauthorized" | "misconfigured" {
-  const expected = String(process.env.CONTENT_DISTRIBUTION_ADMIN_TOKEN ?? "").trim();
-  if (!expected) return "misconfigured";
-  const authorization = req.headers.authorization;
-  const headerToken = Array.isArray(authorization) ? authorization[0] : authorization;
-  const supplied = headerToken?.match(/^Bearer\s+(.+)$/i)?.[1] ?? req.headers["x-newssa-admin-token"];
-  const token = Array.isArray(supplied) ? supplied[0] : supplied;
-  return token && constantTimeTokenEquals(expected, token) ? "authorized" : "unauthorized";
-}
-
-export function authorizeScheduledAutomationRequest(req: VercelRequest): "authorized" | "unauthorized" | "misconfigured" {
-  const scheduledSecret = String(process.env.CRON_SECRET ?? "").trim();
-  const adminSecret = String(process.env.CONTENT_DISTRIBUTION_ADMIN_TOKEN ?? "").trim();
-  if (!scheduledSecret && !adminSecret) return "misconfigured";
-  const authorization = req.headers.authorization;
-  const headerToken = Array.isArray(authorization) ? authorization[0] : authorization;
-  const supplied = headerToken?.match(/^Bearer\s+(.+)$/i)?.[1] ?? req.headers["x-newssa-admin-token"];
-  const token = Array.isArray(supplied) ? supplied[0] : supplied;
-  if (!token) return "unauthorized";
-  if (scheduledSecret && constantTimeTokenEquals(scheduledSecret, token)) return "authorized";
-  if (adminSecret && constantTimeTokenEquals(adminSecret, token)) return "authorized";
-  return "unauthorized";
 }
 
 export function requireRateLimit(req: VercelRequest, res: VercelResponse, key: string, limit: number, windowMs: number): boolean {

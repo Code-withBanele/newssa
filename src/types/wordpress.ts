@@ -40,6 +40,7 @@ export interface WPMedia {
   id: number;
   source_url: string;
   alt_text: string;
+  caption?: { rendered?: string };
   media_details?: {
     width: number;
     height: number;

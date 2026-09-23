@@ -1,0 +1,37 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "git status",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"status",
+				"--short"
+			],
+			"group": "build"
+		},
+		{
+			"label": "git log recent",
+			"type": "shell",
+			"command": "git",
+			"args": [
+				"log",
+				"--oneline",
+				"-15"
+			],
+			"group": "build"
+		},
+		{
+			"label": "run test suite",
+			"type": "shell",
+			"command": "npx",
+			"args": [
+				"vitest",
+				"run",
+				"tests/phase2a-dispatch.test.ts"
+			],
+			"group": "test"
+		}
+	]
+}

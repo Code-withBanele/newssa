@@ -45,6 +45,7 @@ type Page =
   | { type: "search"; query: string }
   | { type: "saved" }
   | { type: "about" }
+  | { type: "advertise" }
   | { type: "privacy" }
   | { type: "cookies" };
 
@@ -212,7 +213,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
         />
       </div>
       <CategoryBadge category={article.category} small />
-      <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-2 group-hover:text-accent transition-colors">
+      <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
         {article.title}
       </h3>
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
@@ -238,7 +239,7 @@ function ArticleCardSmall({ article, onClick, index }: { article: Article; onCli
       )}
       <div className="flex-1 min-w-0">
         {index === undefined && <CategoryBadge category={article.category} small />}
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-1 group-hover:text-accent transition-colors line-clamp-3">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
           {article.title}
         </h4>
         <p className="font-mono text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
@@ -262,7 +263,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       </div>
       <div className="flex-1 min-w-0">
         <CategoryBadge category={article.category} small />
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[30px] leading-snug mt-1.5 group-hover:text-accent transition-colors line-clamp-2">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
           {article.title}
         </h4>
         <div className="flex items-center gap-2 mt-2 text-foreground/65 font-mono text-[10px] tracking-wider uppercase">
@@ -320,7 +321,7 @@ function SearchResultCard({ article, query, onClick }: {
           <CategoryBadge category={article.category} small />
           <span className="font-mono text-[8px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
         </div>
-        <h4 className="font-['Playfair_Display',serif] font-bold text-[30px] text-foreground leading-snug line-clamp-2 group-hover:text-accent transition-colors">
+        <h4 className="font-['Playfair_Display',serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
           {highlightText(article.title, query)}
         </h4>
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
@@ -1017,11 +1018,7 @@ function Navbar({
                   <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
                   <div className="flex flex-col">
                     <p
-                      className="font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[45px] whitespace-nowrap"
-                      style={{
-                        WebkitTextStroke: "1px rgba(0,0,0,0.85)",
-                        textShadow: "0 1px 2px rgba(0,0,0,0.85)",
-                      }}
+                      className="brand-wordmark font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[45px] whitespace-nowrap"
                     >
                       NEWS SOUTH AFRICA
                     </p>
@@ -1308,9 +1305,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
         <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Company</p>
           <button onClick={() => navigate({ type: "about" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">About Us</button>
-          {["Editorial Policy", "Our Team", "Advertise", "Careers", "Contact Us"].map(item => (
-            <button key={item} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">{item}</button>
-          ))}
+          <button onClick={() => navigate({ type: "advertise" })} className="block font-['Inter',sans-serif] text-sm text-white/60 hover:text-white transition-colors mb-2">Advertise</button>
         </div>
         <div className="relative z-10">
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-white/40 mb-4">Legal</p>
@@ -1431,7 +1426,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {hero.category}
                 </span>
               </div>
-              <h1 className="font-['Playfair_Display',serif] font-black text-white text-2xl md:text-4xl leading-tight max-w-2xl">
+              <h1 className="font-['Playfair_Display',serif] font-black text-white text-[clamp(2rem,3vw,3.25rem)] leading-[0.96] max-w-[18ch] break-words">
                 {hero.title}
               </h1>
               <div className="flex items-center gap-4 mt-4 font-mono text-[9px] text-white/60 tracking-widest uppercase">
@@ -1856,10 +1851,10 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
 
           {/* Category + headline */}
           <CategoryBadge category={article.category} />
-          <h1 className="font-['Playfair_Display',serif] font-black text-foreground text-3xl md:text-4xl leading-tight mt-4">
+          <h1 className="font-['Playfair_Display',serif] font-black text-foreground text-[clamp(2.2rem,4vw,4rem)] leading-[0.96] mt-4 break-words max-w-full">
             {article.title}
           </h1>
-              <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-lg mt-4 leading-8">
+              <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-[clamp(1rem,1.8vw,1.35rem)] mt-4 leading-[1.7] break-words max-w-full">
             {article.subtitle}
           </p>
 
@@ -1909,18 +1904,35 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
 
           {/* Body */}
           <div className="prose-custom max-w-none">
-            {article.body.map((para, i) => (
+            {(article.content.length > 0 ? article.content : article.body.map(text => ({ type: "paragraph" as const, text }))).map((block, i) => (
               <div key={i}>
-                {article.pullQuote && i === Math.floor(article.body.length / 2) && (
-                  <blockquote className="border-l-4 border-accent pl-6 my-8">
-                    <p className="font-['Playfair_Display',serif] text-xl text-foreground leading-relaxed italic">
-                      {article.pullQuote}
+                {block.type === "image" && block.image ? (
+                  <figure className="my-8 overflow-hidden rounded-md border border-border bg-muted/20">
+                    <img
+                      src={block.image.src}
+                      alt={block.image.alt || article.title}
+                      className="w-full h-auto max-h-[700px] object-cover"
+                    />
+                    {block.image.caption && (
+                      <figcaption className="px-4 py-3 font-mono text-[9px] tracking-[0.18em] uppercase text-muted-foreground">
+                        {block.image.caption}
+                      </figcaption>
+                    )}
+                  </figure>
+                ) : (
+                  <>
+                    {article.pullQuote && i === Math.floor((article.content.length > 0 ? article.content.filter(item => item.type === "paragraph").length : article.body.length) / 2) && (
+                      <blockquote className="border-l-4 border-accent pl-6 my-8">
+                        <p className="font-['Playfair_Display',serif] text-xl text-foreground leading-relaxed italic">
+                          {article.pullQuote}
+                        </p>
+                      </blockquote>
+                    )}
+                    <p className="font-['Inter',sans-serif] font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full">
+                      {block.type === "paragraph" ? block.text : ""}
                     </p>
-                  </blockquote>
+                  </>
                 )}
-                <p className="font-['Inter',sans-serif] font-medium text-foreground/90 text-base leading-8 mb-5">
-                  {para}
-                </p>
               </div>
             ))}
           </div>
@@ -2429,6 +2441,28 @@ function AboutPage() {
   );
 }
 
+function AdvertisePage() {
+  return (
+    <>
+      <SeoHead title="Advertise with NewsSA | NewsSA" description="Advertise with News South Africa and contact the management team." path="/advertise" keywords={["advertise NewsSA", "News South Africa advertising"]} />
+      <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
+        <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Advertise</span>
+        <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Advertise with NewsSA</h1>
+        <div className="space-y-8">
+          <InfoSection title="Reach engaged readers">
+            <h3>Put your brand in the conversation.</h3>
+
+<p> Reach engaged audiences across South Africa, Africa, and the global stories shaping our world. News South Africa offers brands meaningful opportunities to connect through trusted editorial content, category-specific coverage, and targeted campaigns.</p>
+          </InfoSection>
+          <InfoSection title="Contact the team">
+            <p>For advertising enquiries, email: <a href="mailto:management@newsa.co.za" className="text-accent underline underline-offset-2">management@newsa.co.za</a></p>
+          </InfoSection>
+        </div>
+      </main>
+    </>
+  );
+}
+
 function PrivacyPolicyPage() {
   return (
     <>
@@ -2503,6 +2537,7 @@ function CookieConsent({ navigate }: { navigate: (p: Page) => void }) {
 // ============================================================
 function pageFromPath(pathname: string): Page {
   if (pathname === "/about" || pathname === "/about/") return { type: "about" };
+  if (pathname === "/advertise" || pathname === "/advertise/") return { type: "advertise" };
   if (pathname === "/privacy-policy" || pathname === "/privacy-policy/") return { type: "privacy" };
   if (pathname === "/cookie-policy" || pathname === "/cookie-policy/") return { type: "cookies" };
   if (pathname === "/saved" || pathname === "/saved/") return { type: "saved" };
@@ -2532,6 +2567,7 @@ function pagePath(page: Page): string {
   if (page.type === "search") return `/?search=${encodeURIComponent(page.query)}`;
   if (page.type === "saved") return "/saved";
   if (page.type === "about") return "/about";
+  if (page.type === "advertise") return "/advertise";
   if (page.type === "privacy") return "/privacy-policy";
   if (page.type === "cookies") return "/cookie-policy";
   return "/";
@@ -2593,6 +2629,8 @@ export default function App() {
         return <SavedArticlesPage navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
       case "about":
         return <AboutPage />;
+      case "advertise":
+        return <AdvertisePage />;
       case "privacy":
         return <PrivacyPolicyPage />;
       case "cookies":

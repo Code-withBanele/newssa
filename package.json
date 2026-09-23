@@ -8,7 +8,7 @@
   "type": "module",
   "scripts": {
     "build": "vite build",
-    "test": "node scripts/test-phase2a.mjs",
+    "test": "node scripts/test-article-transform.mjs",
     "dev": "vite",
     "dev:vercel": "node scripts/dev-vercel.mjs"
   },

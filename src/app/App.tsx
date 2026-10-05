@@ -150,11 +150,11 @@ function highlightText(text: string, query: string): React.ReactNode {
 // --- Nav categories ---
 const NAV_CATEGORIES = [
   "News", "Technology", "Politics", "Business",
-  "Sports", "Science", "Motoring", "Entertainment", "Opinion",
+  "Sports", "Science", "Motoring", "Entertainment", "Opinion", "Profile",
 ];
 const ALL_CATEGORIES = [
   "Home", "Politics", "Business", "Economy", "Africa", "World",
-  "Technology", "Sports", "Science", "Entertainment", "Opinion", "Leadership & Ideas", "Contact",
+  "Technology", "Sports", "Science", "Entertainment", "Opinion", "Profile", "Leadership & Ideas", "Contact",
 ];
 const MORE_CATEGORIES = ALL_CATEGORIES.filter(cat => cat !== "Home" && !NAV_CATEGORIES.includes(cat));
 
@@ -1163,7 +1163,10 @@ function Navbar({
                   {NAV_CATEGORIES.map(cat => (
                     <button
                       key={cat}
-                      onClick={() => cat === "News" ? navigate({ type: "home" }) : navigate({ type: "category", name: cat })}
+                      onClick={() => {
+                        if (cat === "News") return navigate({ type: "home" });
+                        return navigate({ type: "category", name: cat });
+                      }}
                       className="relative shrink-0 px-2 xl:px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
                     >
                       {cat}

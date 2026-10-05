@@ -4,7 +4,8 @@ import {
   Clock, Facebook, Twitter, Linkedin, Mail, ArrowUp, Bookmark,
   MessageSquare, ChevronLeft, ChevronRight, Instagram, Youtube, User, Settings
 } from "lucide-react";
-import { Article, transformPost } from "../utils/transform";
+import { Article, ArticleImage, isAuthorByline, transformPost } from "../utils/transform";
+import { groupAdjacentArticleImages } from "../utils/articleDisplay";
 import { fetchPost } from "../api/posts";
 import { usePosts } from "../hooks/usePosts";
 import { usePost } from "../hooks/usePost";
@@ -48,6 +49,11 @@ type Page =
   | { type: "advertise" }
   | { type: "privacy" }
   | { type: "cookies" };
+
+interface ArticleImageViewerState {
+  images: ArticleImage[];
+  index: number;
+}
 
 // --- Category meta ---
 const CATEGORY_META: Record<string, { color: string; textColor: string }> = {
@@ -186,7 +192,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8">
           <CategoryBadge category={article.category} />
-          <h2 className="font-['Playfair_Display',serif] font-black text-white text-[30px] leading-tight mt-3 max-w-2xl">
+          <h2 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[30px] leading-tight mt-3 max-w-2xl">
             {article.title}
           </h2>
           <div className="flex items-center gap-4 mt-4 text-white/60 font-mono text-[9px] tracking-widest uppercase">
@@ -213,7 +219,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
         />
       </div>
       <CategoryBadge category={article.category} small />
-      <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
+      <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
         {article.title}
       </h3>
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
@@ -233,13 +239,13 @@ function ArticleCardSmall({ article, onClick, index }: { article: Article; onCli
       onClick={onClick}
     >
       {index !== undefined && (
-        <span className="font-['Playfair_Display',serif] font-black text-foreground/10 text-2xl leading-none shrink-0 w-6">
+        <span className="font-['IBM_Plex_Serif',serif] font-black text-foreground/10 text-2xl leading-none shrink-0 w-6">
           {String(index + 1).padStart(2, "0")}
         </span>
       )}
       <div className="flex-1 min-w-0">
         {index === undefined && <CategoryBadge category={article.category} small />}
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
+        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
           {article.title}
         </h4>
         <p className="font-mono text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
@@ -263,7 +269,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       </div>
       <div className="flex-1 min-w-0">
         <CategoryBadge category={article.category} small />
-        <h4 className="font-['Playfair_Display',serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
+        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
           {article.title}
         </h4>
         <div className="flex items-center gap-2 mt-2 text-foreground/65 font-mono text-[10px] tracking-wider uppercase">
@@ -321,7 +327,7 @@ function SearchResultCard({ article, query, onClick }: {
           <CategoryBadge category={article.category} small />
           <span className="font-mono text-[8px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
         </div>
-        <h4 className="font-['Playfair_Display',serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
+        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
           {highlightText(article.title, query)}
         </h4>
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
@@ -464,11 +470,11 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                     onClick={() => { onClose(); navigate({ type: "article", id: a.id }); }}
                     className="w-full text-left flex items-center gap-3 py-3 hover:bg-secondary/40 transition-colors group px-2 -mx-2 rounded"
                   >
-                    <span className="font-['Playfair_Display',serif] font-black text-foreground/12 text-xl w-7 shrink-0 leading-none">
+                    <span className="font-['IBM_Plex_Serif',serif] font-black text-foreground/12 text-xl w-7 shrink-0 leading-none">
                       {i + 1}
                     </span>
                     <CategoryBadge category={a.category} small />
-                    <span className="font-['Playfair_Display',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1 flex-1">
+                    <span className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1 flex-1">
                       {a.title}
                     </span>
                     <span className="font-mono text-[8px] text-muted-foreground shrink-0">{a.timeAgo}</span>
@@ -500,7 +506,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
               <div className="w-12 h-12 border-2 border-dashed border-border rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search size={20} className="text-muted-foreground/40" />
               </div>
-              <p className="font-['Playfair_Display',serif] font-bold text-xl text-foreground mb-2">
+              <p className="font-['IBM_Plex_Serif',serif] font-bold text-xl text-foreground mb-2">
                 No articles matched your search.
               </p>
               <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mb-6">
@@ -595,7 +601,7 @@ function Preloader({ visible }: { visible: boolean }) {
         <img src={logoImg} alt="News South Africa" className="w-20 h-20 object-cover" />
       </div>
       <p
-        className="font-['Playfair_Display',serif] font-black text-white text-base tracking-[0.25em] uppercase mt-5"
+        className="font-['IBM_Plex_Serif',serif] font-black text-white text-base tracking-[0.25em] uppercase mt-5"
         style={{ opacity: 0.85 }}
       >
         News South Africa
@@ -771,7 +777,7 @@ function LoginModal({ onClose, onLogin, initialMode = "login" }: {
               <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-1">
                 {mode === "register" ? "Join NewsSA" : mode === "2fa" || mode === "reset" ? "Secure verification" : mode === "forgot" ? "Account recovery" : "Welcome back"}
               </p>
-              <h2 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground leading-none">
+              <h2 className="font-['IBM_Plex_Serif',serif] font-black text-3xl text-foreground leading-none">
                 {mode === "register" ? "Create Account" : mode === "2fa" ? "Verify your email" : mode === "forgot" ? "Forgot password" : mode === "reset" ? "Set new password" : "Sign In"}
               </h2>
             </div>
@@ -1013,12 +1019,12 @@ function Navbar({
                 {/* Center — logo lockup, always centered */}
                 <button
                   onClick={() => navigate({ type: "home" })}
-                  className="relative flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 lg:px-3 py-2 max-w-full"
+                  className="relative flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 lg:px-3 py-2 max-w-full cursor-pointer"
                 >
                   <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
                   <div className="flex flex-col">
                     <p
-                      className="brand-wordmark font-['Playfair_Display',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[24px] xl:text-[45px] whitespace-nowrap"
+                      className="brand-wordmark font-['IBM_Plex_Serif',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[26px] xl:text-[45px] whitespace-nowrap"
                     >
                       NEWS SOUTH AFRICA
                     </p>
@@ -1167,7 +1173,7 @@ function Navbar({
                         if (cat === "News") return navigate({ type: "home" });
                         return navigate({ type: "category", name: cat });
                       }}
-                      className="relative shrink-0 px-2 xl:px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
+                      className="relative shrink-0 px-2 xl:px-4 py-3.5 font-['IBM_Plex_Serif',serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
                     >
                       {cat}
                       <span className="absolute bottom-0 left-4 w-0 h-[2px] bg-accent group-hover:w-6 transition-all duration-200" />
@@ -1176,7 +1182,7 @@ function Navbar({
                   <div className="relative shrink-0">
                     <button
                       onClick={() => setCategoriesOpen(v => !v)}
-                      className="flex items-center gap-1 px-2 xl:px-4 py-3.5 font-['Inter',sans-serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all"
+                      className="flex items-center gap-1 px-2 xl:px-4 py-3.5 font-['IBM_Plex_Serif',serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all"
                       aria-expanded={categoriesOpen}
                       aria-haspopup="menu"
                     >
@@ -1191,7 +1197,7 @@ function Navbar({
                               setCategoriesOpen(false);
                               navigate({ type: "category", name: cat });
                             }}
-                            className="block w-full text-left px-5 py-3.5 font-['Inter',sans-serif] font-bold text-[11px] tracking-[0.06em] uppercase text-white/85 hover:bg-white/15 hover:text-white transition-colors"
+                            className="block w-full text-left px-5 py-3.5 font-['IBM_Plex_Serif',serif] font-bold text-[11px] tracking-[0.06em] uppercase text-white/85 hover:bg-white/15 hover:text-white transition-colors"
                             role="menuitem"
                           >
                             {cat}
@@ -1258,7 +1264,7 @@ function Navbar({
                     if (cat === "Home") navigate({ type: "home" });
                     else navigate({ type: "category", name: cat });
                   }}
-                  className="text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
+                  className="text-left py-3 font-['IBM_Plex_Serif',serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
                 >
                   {cat}
                 </button>
@@ -1335,7 +1341,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
           <div className="flex flex-col items-start gap-3 mb-2">
             <img src={logoImg} alt="News SA" className="w-32 h-32 object-cover" />
             <div>
-                <p className="font-['Playfair_Display',serif] text-white text-[18px] font-black">NEWS SOUTH AFRICA</p>
+                <p className="font-['IBM_Plex_Serif',serif] text-white text-[18px] font-black">NEWS SOUTH AFRICA</p>
                 <p className="font-mono text-[16px] text-white/40 tracking-widest uppercase">Independent Digital News</p>
             </div>
           </div>
@@ -1429,7 +1435,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {hero.category}
                 </span>
               </div>
-              <h1 className="font-['Playfair_Display',serif] font-black text-white text-[clamp(2rem,3vw,3.25rem)] leading-[0.96] max-w-[18ch] break-words">
+              <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(2rem,3vw,3.25rem)] leading-[0.96] max-w-[18ch] break-words">
                 {hero.title}
               </h1>
               <div className="flex items-center gap-4 mt-4 font-mono text-[9px] text-white/60 tracking-widest uppercase">
@@ -1455,11 +1461,11 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   onClick={() => navigate({ type: "article", id: a.id })}
                   className="w-full text-left flex gap-4 items-start px-7 py-5 border-t border-border cursor-pointer hover:bg-secondary/40 transition-all group"
                 >
-                  <span className="font-['Playfair_Display',serif] font-black text-foreground/10 text-lg shrink-0">
+                  <span className="font-['IBM_Plex_Serif',serif] font-black text-foreground/10 text-lg shrink-0">
                     {i + 1}
                   </span>
                   <div>
-                    <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
+                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.timeAgo}</p>
@@ -1489,7 +1495,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               </div>
               <div className="p-7">
                 <CategoryBadge category={article.category} small />
-                <h2 className="font-['Playfair_Display',serif] font-bold text-foreground text-xl leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h2 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-xl leading-snug mt-2 group-hover:text-accent transition-colors">
                   {article.title}
                 </h2>
                 <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2">
@@ -1526,7 +1532,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 />
               </div>
               <CategoryBadge category={article.category} small />
-              <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
+              <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
                 {article.title}
               </h3>
               <p className="font-mono text-[9px] text-muted-foreground mt-2">{article.author} · {article.timeAgo}</p>
@@ -1569,7 +1575,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   />
                 </div>
                 <CategoryBadge category="Politics" small />
-                <h3 className="font-['Playfair_Display',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h3 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {politicsFeature.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
@@ -1586,7 +1592,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     className="text-left border-b border-border pb-4 mb-1 hover:text-accent transition-colors"
                   >
                     <CategoryBadge category={a.category} small />
-                    <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
+                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
@@ -1616,7 +1622,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   />
                 </div>
                 <CategoryBadge category={secondary[17].category} small />
-                <h3 className="font-['Playfair_Display',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h3 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {secondary[17].title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
@@ -1627,14 +1633,16 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               </div>
               )}
               <div className="flex flex-col gap-1">
-                {secondary.slice(18, 20).map(a => (
+                {secondary.slice(18, 20).filter(a =>
+                  !a.title.startsWith("CHINA HOMELIFE SOUTH AFRICA 2026 DRAWS TO A CLOSE")
+                ).map(a => (
                   <button
                     key={a.id}
                     onClick={() => navigate({ type: "article", id: a.id })}
                     className="text-left border-b border-border pb-4 mb-1"
                   >
                     <CategoryBadge category={a.category} small />
-                    <p className="font-['Playfair_Display',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
+                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
@@ -1704,7 +1712,7 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-24">
       <div className="max-w-md mx-auto text-center">
         <Bookmark size={32} className="mx-auto text-accent" />
-        <h1 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground mt-5">Sign in to view saved articles</h1>
+        <h1 className="font-['IBM_Plex_Serif',serif] font-black text-3xl text-foreground mt-5">Sign in to view saved articles</h1>
         <p className="font-['Inter',sans-serif] text-sm text-muted-foreground mt-3">Your reading list is private and available after you sign in.</p>
         <button onClick={onRequireLogin} className="mt-6 bg-foreground text-white px-5 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">Sign In</button>
       </div>
@@ -1721,7 +1729,7 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
       <div className="flex items-end justify-between border-b-2 border-foreground pb-4 mb-8">
         <div>
           <p className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground mb-2">Your reading list</p>
-          <h1 className="font-['Playfair_Display',serif] font-black text-4xl text-foreground">Saved Articles</h1>
+          <h1 className="font-['IBM_Plex_Serif',serif] font-black text-4xl text-foreground">Saved Articles</h1>
         </div>
         <Bookmark className="text-accent" size={28} />
       </div>
@@ -1729,7 +1737,7 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
         <div className="flex flex-col items-center justify-center py-24 gap-5 text-center">
           <Bookmark size={32} className="text-muted-foreground" />
           <div>
-            <p className="font-['Playfair_Display',serif] text-xl font-bold text-foreground">No saved articles yet.</p>
+            <p className="font-['IBM_Plex_Serif',serif] text-xl font-bold text-foreground">No saved articles yet.</p>
             <p className="font-['Inter',sans-serif] text-sm text-muted-foreground mt-1">Keep the stories you want to return to in one place.</p>
           </div>
           <button onClick={() => navigate({ type: "home" })} className="bg-foreground text-white px-5 py-3 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">Explore Articles</button>
@@ -1749,6 +1757,8 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
   const [saved, setSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [imageViewer, setImageViewer] = useState<ArticleImageViewerState | null>(null);
+  const imageViewerOpen = imageViewer !== null;
   const { articles: related } = usePosts(
     article ? { categories: [], per_page: 3, orderby: "date" } : {},
     [article?.id]
@@ -1775,7 +1785,42 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
     getSavedArticles().then(result => setSaved(result.articles.some(item => item.articleId === id))).catch(() => setSaved(false));
   }, [id, user]);
 
+  useEffect(() => {
+    if (!imageViewerOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setImageViewer(null);
+      if (event.key === "ArrowLeft") {
+        setImageViewer(current => current && {
+          ...current,
+          index: (current.index - 1 + current.images.length) % current.images.length,
+        });
+      }
+      if (event.key === "ArrowRight") {
+        setImageViewer(current => current && ({
+          ...current,
+          index: (current.index + 1) % current.images.length,
+        }));
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [imageViewerOpen]);
+
   const articlePath = `/article/${id}`;
+  const articleBodyBlocks = article
+    ? (article.content.length > 0
+      ? article.content
+      : article.body.map(text => ({ type: "paragraph" as const, text })))
+      .filter(block => block.type !== "paragraph" || !isAuthorByline(block.text ?? ""))
+    : [];
+  const articleDisplayBlocks = groupAdjacentArticleImages(articleBodyBlocks);
   const seo = <SeoHead
     title={article ? `${article.title} | NewsSA` : "Article | NewsSA"}
     description={article?.subtitle || "Read the latest independent news from News South Africa."}
@@ -1852,21 +1897,27 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
             </button>
           </div>
 
-          {/* Category + headline */}
-          <CategoryBadge category={article.category} />
-          <h1 className="font-['Playfair_Display',serif] font-black text-foreground text-[clamp(2.2rem,4vw,4rem)] leading-[0.96] mt-4 break-words max-w-full">
-            {article.title}
-          </h1>
-              <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-[clamp(1rem,1.8vw,1.35rem)] mt-4 leading-[1.7] break-words max-w-full">
-            {article.subtitle}
-          </p>
+          {/* Category + centered headline + author */}
+          <div className="text-center">
+            <CategoryBadge category={article.category} />
+            <h1
+              className="mt-4 break-words max-w-full text-foreground text-[clamp(2.2rem,4vw,4rem)] leading-[0.96]"
+              style={{ fontFamily: '"IBM Plex Serif", serif', fontWeight: 700 }}
+            >
+              {article.title}
+            </h1>
+            {article.authorAvailable && (
+              <p
+                className="mt-4 text-sm uppercase tracking-[0.18em] text-foreground/75"
+                style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+              >
+                {article.author}
+              </p>
+            )}
+          </div>
 
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-4 py-5 border-y border-border mt-5">
-            <div>
-              <p className="font-mono text-[9px] tracking-widest uppercase text-foreground">{article.author}</p>
-            </div>
-            <span className="text-border">·</span>
             <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground">
               <Clock size={10} />
               <span>{article.date}</span>
@@ -1907,15 +1958,46 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
 
           {/* Body */}
           <div className="prose-custom max-w-none">
-            {(article.content.length > 0 ? article.content : article.body.map(text => ({ type: "paragraph" as const, text }))).map((block, i) => (
+            {articleDisplayBlocks.map((block, i) => (
               <div key={i}>
-                {block.type === "image" && block.image ? (
+                {block.type === "gallery" ? (
+                  <div className={`my-8 grid w-full gap-3 sm:gap-4 ${block.images.length === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
+                    {block.images.map((image, imageIndex) => (
+                      <figure key={`${image.src}-${imageIndex}`} className="overflow-hidden rounded-md border border-border bg-muted/20">
+                        <button
+                          type="button"
+                          className="block w-full cursor-zoom-in"
+                          onClick={() => setImageViewer({ images: block.images, index: imageIndex })}
+                          aria-label={`View image ${imageIndex + 1} of ${block.images.length} full screen`}
+                        >
+                          <img
+                            src={image.src}
+                            alt={image.alt || article.title}
+                            className="aspect-[4/3] w-full object-cover transition-opacity hover:opacity-90"
+                          />
+                        </button>
+                        {image.caption && (
+                          <figcaption className="px-4 py-3 font-mono text-[9px] tracking-[0.18em] uppercase text-muted-foreground">
+                            {image.caption}
+                          </figcaption>
+                        )}
+                      </figure>
+                    ))}
+                  </div>
+                ) : block.type === "image" && block.image ? (
                   <figure className="my-8 overflow-hidden rounded-md border border-border bg-muted/20">
-                    <img
-                      src={block.image.src}
-                      alt={block.image.alt || article.title}
-                      className="w-full h-auto max-h-[700px] object-cover"
-                    />
+                    <button
+                      type="button"
+                      className="block w-full cursor-zoom-in"
+                      onClick={() => block.image && setImageViewer({ images: [block.image], index: 0 })}
+                      aria-label="View image full screen"
+                    >
+                      <img
+                        src={block.image.src}
+                        alt={block.image.alt || article.title}
+                        className="w-full h-auto max-h-[700px] object-cover"
+                      />
+                    </button>
                     {block.image.caption && (
                       <figcaption className="px-4 py-3 font-mono text-[9px] tracking-[0.18em] uppercase text-muted-foreground">
                         {block.image.caption}
@@ -1924,14 +2006,17 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
                   </figure>
                 ) : (
                   <>
-                    {article.pullQuote && i === Math.floor((article.content.length > 0 ? article.content.filter(item => item.type === "paragraph").length : article.body.length) / 2) && (
+                    {article.pullQuote && i === Math.floor((articleDisplayBlocks.filter(item => item.type === "paragraph").length) / 2) && (
                       <blockquote className="border-l-4 border-accent pl-6 my-8">
-                        <p className="font-['Playfair_Display',serif] text-xl text-foreground leading-relaxed italic">
+                        <p className="font-['IBM_Plex_Serif',serif] text-xl text-foreground leading-relaxed italic">
                           {article.pullQuote}
                         </p>
                       </blockquote>
                     )}
-                    <p className="font-['Inter',sans-serif] font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full">
+                    <p
+                      className="font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full"
+                      style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+                    >
                       {block.type === "paragraph" ? block.text : ""}
                     </p>
                   </>
@@ -1971,7 +2056,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
                 <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
                   <ChevronLeft size={10} /> Previous
                 </div>
-                <p className="font-['Playfair_Display',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                <p className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
                   {prevArticle.title}
                 </p>
               </button>
@@ -1985,7 +2070,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
                 <div className="flex items-center justify-end gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
                   Next <ChevronRight size={10} />
                 </div>
-                <p className="font-['Playfair_Display',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                <p className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
                   {nextArticle.title}
                 </p>
               </button>
@@ -1993,21 +2078,6 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
             {!nextArticle && <div />}
           </div>
 
-          {/* Comment section placeholder */}
-          <div className="mt-10 border-t border-border pt-8">
-            <div className="flex items-center gap-2 mb-6">
-              <MessageSquare size={16} className="text-muted-foreground" />
-              <h3 className="font-mono text-[11px] tracking-widest uppercase text-foreground">Comments</h3>
-            </div>
-            <div className="bg-secondary/30 border border-border p-6 text-center">
-              <p className="font-['Inter',sans-serif] text-muted-foreground text-sm">
-                Sign in to join the conversation.
-              </p>
-              <button className="mt-3 bg-primary text-primary-foreground px-6 py-2 font-mono text-[9px] tracking-widest uppercase hover:bg-accent transition-colors">
-                Sign In
-              </button>
-            </div>
-          </div>
         </article>
 
         {/* Sidebar */}
@@ -2042,6 +2112,73 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
         </aside>
       </div>
     </main>
+    {imageViewer && imageViewer.images[imageViewer.index] && (
+      <div
+        className="fixed inset-0 z-[250] flex items-center justify-center bg-black/95 p-4 sm:p-8"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Full-screen article image viewer"
+      >
+        <button
+          type="button"
+          className="absolute inset-0 h-full w-full cursor-zoom-out"
+          onClick={() => setImageViewer(null)}
+          aria-label="Close image viewer"
+        />
+        <div className="relative z-10 flex max-h-full w-full max-w-7xl flex-col items-center justify-center">
+          <button
+            type="button"
+            className="absolute -top-10 right-0 cursor-pointer p-2 text-white/80 hover:text-white"
+            onClick={() => setImageViewer(null)}
+            aria-label="Close full-screen image"
+          >
+            <X size={24} />
+          </button>
+          {imageViewer.images.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="absolute left-0 z-10 cursor-pointer rounded-full bg-black/50 p-3 text-white hover:bg-black/75"
+                onClick={() => setImageViewer(current => current && ({
+                  ...current,
+                  index: (current.index - 1 + current.images.length) % current.images.length,
+                }))}
+                aria-label="Previous image"
+              >
+                <ChevronLeft size={24} />
+              </button>
+              <button
+                type="button"
+                className="absolute right-0 z-10 cursor-pointer rounded-full bg-black/50 p-3 text-white hover:bg-black/75"
+                onClick={() => setImageViewer(current => current && ({
+                  ...current,
+                  index: (current.index + 1) % current.images.length,
+                }))}
+                aria-label="Next image"
+              >
+                <ChevronRight size={24} />
+              </button>
+            </>
+          )}
+          <img
+            src={imageViewer.images[imageViewer.index].src}
+            alt={imageViewer.images[imageViewer.index].alt || article.title}
+            className="max-h-[calc(100vh-8rem)] max-w-[calc(100%-5rem)] cursor-zoom-out object-contain"
+            onClick={() => setImageViewer(null)}
+          />
+          <div className="mt-4 flex items-center gap-4 text-center text-sm text-white">
+            {imageViewer.images[imageViewer.index].caption && (
+              <p>{imageViewer.images[imageViewer.index].caption}</p>
+            )}
+            {imageViewer.images.length > 1 && (
+              <span className="shrink-0 text-white/70">
+                {imageViewer.index + 1} / {imageViewer.images.length}
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    )}
     </>
   );
 }
@@ -2083,7 +2220,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   if (!loading && articles.length === 0) return (
     <>{seo}<main>
       <div className="border-b border-border py-10 max-w-7xl mx-auto px-4 lg:px-8">
-        <h1 className="font-['Playfair_Display',serif] font-black text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
+        <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
       </div>
       <EmptyState title="No articles in this category yet" message="Check back soon — content is published from WordPress." />
     </main></>
@@ -2100,7 +2237,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
             <div>
               <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Category</span>
               <h1
-                className="font-['Playfair_Display',serif] font-black text-5xl md:text-7xl leading-none mt-1"
+                className="font-['IBM_Plex_Serif',serif] font-black text-5xl md:text-7xl leading-none mt-1"
                 style={{ color: meta.textColor }}
               >
                 {displayName}
@@ -2134,7 +2271,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                   </div>
                   <div className="p-6">
                     <CategoryBadge category={featured.category} small />
-                    <h2 className="font-['Playfair_Display',serif] font-black text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
+                    <h2 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
                       {featured.title}
                     </h2>
                     <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">{featured.subtitle}</p>
@@ -2228,7 +2365,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
       {seo}
     <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
       <div className="max-w-2xl mb-10">
-        <h1 className="font-['Playfair_Display',serif] font-black text-3xl text-foreground mb-6">
+        <h1 className="font-['IBM_Plex_Serif',serif] font-black text-3xl text-foreground mb-6">
           Search Results
         </h1>
         <form
@@ -2280,7 +2417,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                 </div>
                 <div className="flex-1 min-w-0">
                   <CategoryBadge category={article.category} small />
-                  <h3 className="font-['Playfair_Display',serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                  <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                     {article.title}
                   </h3>
                   <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2">
@@ -2341,7 +2478,7 @@ function ContactPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
         <div>
           <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Get in touch</span>
-          <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-4">Contact Us</h1>
+          <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl text-foreground mt-2 mb-4">Contact Us</h1>
           <p className="font-['Inter',sans-serif] text-muted-foreground text-base leading-relaxed mb-8">
             We welcome tips, corrections, story ideas, and general feedback from our readers. Our editorial team reads every message.
           </p>
@@ -2362,7 +2499,7 @@ function ContactPage() {
         <div>
           {sent ? (
             <div className="bg-[#0f1f3d] p-10 text-center">
-              <p className="font-['Playfair_Display',serif] text-white text-2xl font-bold mb-2">Message received.</p>
+              <p className="font-['IBM_Plex_Serif',serif] text-white text-2xl font-bold mb-2">Message received.</p>
               <p className="font-['Inter',sans-serif] text-white/60 text-sm">We aim to respond within 2 business days.</p>
             </div>
           ) : (
@@ -2418,7 +2555,7 @@ function ContactPage() {
 function InfoSection({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section className="border-t border-border pt-6">
-      <h2 className="font-['Playfair_Display',serif] font-bold text-2xl text-foreground mb-3">{title}</h2>
+      <h2 className="font-['IBM_Plex_Serif',serif] font-bold text-2xl text-foreground mb-3">{title}</h2>
       <div className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed space-y-3">{children}</div>
     </section>
   );
@@ -2430,7 +2567,7 @@ function AboutPage() {
       <SeoHead title="About News South Africa | NewsSA" description="Learn about News South Africa, an independent online publication based in Johannesburg." path="/about" keywords={["about NewsSA", "News South Africa"]} />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">About</span>
-      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">About NEWSSA</h1>
+      <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl text-foreground mt-2 mb-5">About NEWSSA</h1>
       <p className="font-['Inter',sans-serif] text-muted-foreground text-lg leading-relaxed mb-10">
         News South Africa (NewsSA) is an independent online publication based in Johannesburg, Gauteng Province, South Africa, with a focus on news and events happening in South Africa, the rest of Africa and the World. We are not politically affiliated, hence we accept potential news items from any individual and organisation regardless of their backgrounds. Every news item is judged and accepted on its merit only. The decision of the Editor and the editorial team is final and is based only on the merit of the material sent to them.
       </p>
@@ -2450,7 +2587,7 @@ function AdvertisePage() {
       <SeoHead title="Advertise with NewsSA | NewsSA" description="Advertise with News South Africa and contact the management team." path="/advertise" keywords={["advertise NewsSA", "News South Africa advertising"]} />
       <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
         <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Advertise</span>
-        <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Advertise with NewsSA</h1>
+        <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl text-foreground mt-2 mb-5">Advertise with NewsSA</h1>
         <div className="space-y-8">
           <InfoSection title="Reach engaged readers">
             <h3>Put your brand in the conversation.</h3>
@@ -2472,7 +2609,7 @@ function PrivacyPolicyPage() {
       <SeoHead title="Privacy Policy | NewsSA" description="Read the NewsSA privacy policy and learn how the website handles information." path="/privacy-policy" robots="noindex, follow" />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
-      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Privacy Policy</h1>
+      <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl text-foreground mt-2 mb-5">Privacy Policy</h1>
       <p className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed mb-10">This policy explains how NEWSSA handles information when you use the website. Last updated: September 2026.</p>
       <div className="space-y-8">
         <InfoSection title="Information You Provide"><p>When you create an account, we receive your name, email address and authentication information needed to verify your account, protect it and manage your session. We do not store your plain-text password.</p></InfoSection>
@@ -2494,7 +2631,7 @@ function CookiePolicyPage() {
       <SeoHead title="Cookie Policy | NewsSA" description="Read the NewsSA cookie policy and learn about cookies and browser storage used by the site." path="/cookie-policy" robots="noindex, follow" />
     <main className="max-w-4xl mx-auto px-4 lg:px-8 py-16">
       <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Legal</span>
-      <h1 className="font-['Playfair_Display',serif] font-black text-5xl text-foreground mt-2 mb-5">Cookie Policy</h1>
+      <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl text-foreground mt-2 mb-5">Cookie Policy</h1>
       <p className="font-['Inter',sans-serif] text-muted-foreground text-sm leading-relaxed mb-10">This policy describes the cookies and browser storage currently used by NEWSSA. Last updated: September 2026.</p>
       <div className="space-y-8">
         <InfoSection title="What Cookies Are"><p>Cookies are small values stored by a website in your browser. Similar browser storage, such as local storage, can remember a preference on the same device.</p></InfoSection>

@@ -1,6 +1,6 @@
 import { WPPaginationMeta } from "../types/wordpress";
 
-const BASE_URL = (import.meta.env.VITE_WORDPRESS_API as string | undefined) ?? "";
+const BASE_URL = ((import.meta.env.VITE_WORDPRESS_API as string | undefined) ?? "").trim();
 const CACHE_TTL = 5 * 60 * 1000;
 
 interface CacheEntry<T> {
@@ -25,10 +25,17 @@ export interface PagedResponse<T> {
 
 function buildUrl(path: string, params?: Record<string, string | number | boolean>): string {
   if (!BASE_URL) {
-    throw new ApiError(0, "WordPress API URL not configured. Set VITE_WORDPRESS_API in your .env file.");
+    throw new ApiError(0, "WordPress API URL not configured. Set VITE_WORDPRESS_API in your .env file to your WP REST endpoint, for example https://your-site.com/wp-json/wp/v2");
   }
 
-  const url = new URL(`${BASE_URL}${path}`);
+  try {
+    new URL(BASE_URL);
+  } catch {
+    throw new ApiError(0, "WordPress API URL is invalid. Set VITE_WORDPRESS_API to a full URL like https://your-site.com/wp-json/wp/v2");
+  }
+
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  const url = new URL(`${BASE_URL.replace(/\/+$/, "")}${normalizedPath}`);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v));

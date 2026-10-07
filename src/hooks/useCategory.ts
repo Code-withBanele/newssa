@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { fetchCategoryBySlug } from "../api/categories";
 import { fetchPosts } from "../api/posts";
 import { transformPosts, Article } from "../utils/transform";
+import { categorySlug } from "../utils/categorySlug";
 import { WPCategory } from "../types/wordpress";
 
 interface UseCategoryState {
@@ -23,7 +24,7 @@ export function useCategory(nameOrSlug: string, page = 1, perPage = 12): UseCate
     totalPages: 1,
   });
 
-  const slug = nameOrSlug.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and");
+  const slug = categorySlug(nameOrSlug);
 
   useEffect(() => {
     let cancelled = false;

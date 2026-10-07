@@ -7,11 +7,14 @@ import {
 import { Article, ArticleImage, isAuthorByline, transformPost } from "../utils/transform";
 import { groupAdjacentArticleImages } from "../utils/articleDisplay";
 import { fetchPost } from "../api/posts";
+import { fetchCategories } from "../api/categories";
 import { usePosts } from "../hooks/usePosts";
 import { usePost } from "../hooks/usePost";
 import { useCategory } from "../hooks/useCategory";
 import { useFeaturedPosts } from "../hooks/useFeaturedPosts";
 import { useSearch } from "../hooks/useSearch";
+import { categorySlug } from "../utils/categorySlug";
+import type { WPCategory } from "../types/wordpress";
 import { SeoHead } from "./SeoHead";
 import {
   AccountUser, getCurrentUser, getSavedArticles, login, logout, register,
@@ -88,6 +91,7 @@ const CATEGORY_NAME_ALIASES: Record<string, string> = {
   world: "World",
   leadership: "Leadership",
   "leadership-and-ideas": "Leadership & Ideas",
+  "life-style": "Lifestyle",
   science: "Science",
   motoring: "Motoring",
   contact: "Contact",
@@ -113,11 +117,7 @@ function normalizeCategoryName(name: string): string {
 }
 
 function toCategorySlug(name: string): string {
-  return normalizeCategoryName(name)
-    .toLowerCase()
-    .replace(/&/g, "and")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+  return categorySlug(normalizeCategoryName(name));
 }
 
 function getCategoryMeta(cat: string) {
@@ -158,12 +158,6 @@ const NAV_CATEGORIES = [
   "News", "Technology", "Politics", "Business",
   "Sports", "Science", "Motoring", "Entertainment", "Opinion", "Profile",
 ];
-const ALL_CATEGORIES = [
-  "Home", "Politics", "Business", "Economy", "Africa", "World",
-  "Technology", "Sports", "Science", "Entertainment", "Opinion", "Profile", "Leadership & Ideas", "Contact",
-];
-const MORE_CATEGORIES = ALL_CATEGORIES.filter(cat => cat !== "Home" && !NAV_CATEGORIES.includes(cat));
-
 // --- Helpers ---
 function CategoryBadge({ category, small }: { category: string; small?: boolean }) {
   const meta = getCategoryMeta(category);
@@ -913,10 +907,31 @@ function Navbar({
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [moreOpen, setMoreOpen] = useState(false);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const [moreCategories, setMoreCategories] = useState<WPCategory[]>([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [latestReads, setLatestReads] = useState<LatestRead[]>([]);
   const [scrolled, setScrolled] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchCategories()
+      .then(categories => {
+        if (cancelled) return;
+        const navCategories = new Set(NAV_CATEGORIES.map(category => category.toLowerCase()));
+        setMoreCategories(categories.filter(category =>
+          !navCategories.has(category.name.toLowerCase()) && category.slug !== "uncategorized"
+        ));
+      })
+      .catch(() => {
+        if (!cancelled) setMoreCategories([]);
+      })
+      .finally(() => {
+        if (!cancelled) setCategoriesLoaded(true);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     if (!user || (!userMenuOpen && !mobileOpen)) return;
@@ -954,19 +969,23 @@ function Navbar({
     if (!vid) return;
     let raf: number;
     function tick() {
-      if (!vid || isNaN(vid.duration)) { raf = requestAnimationFrame(tick); return; }
-      const remaining = vid.duration - vid.currentTime;
-      vid.style.opacity = remaining < 1 ? String(Math.max(0, remaining)) : "1";
+      if (!Number.isFinite(vid.duration) || vid.duration <= 0) {
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+      const loopEnd = Math.min(8, vid.duration);
+      if (vid.currentTime >= loopEnd) {
+        vid.currentTime = 0;
+        vid.style.opacity = "1";
+        vid.play().catch(() => {});
+      } else {
+        const remaining = loopEnd - vid.currentTime;
+        vid.style.opacity = remaining < 1 ? String(Math.max(0, remaining)) : "1";
+      }
       raf = requestAnimationFrame(tick);
     }
-    function onEnded() {
-      if (!vid) return;
-      vid.currentTime = 0;
-      vid.play().catch(() => {});
-    }
     raf = requestAnimationFrame(tick);
-    vid.addEventListener("ended", onEnded);
-    return () => { cancelAnimationFrame(raf); vid.removeEventListener("ended", onEnded); };
+    return () => { cancelAnimationFrame(raf); };
   }, []);
 
   return (
@@ -981,7 +1000,7 @@ function Navbar({
       <header
         className={`sticky top-0 z-50 transition-shadow ${scrolled ? "shadow-xl shadow-black/40" : ""}`}
       >
-        <div className="relative overflow-hidden">
+        <div className="relative">
 
           {/* VIDEO — layer 0 */}
           <video
@@ -989,7 +1008,6 @@ function Navbar({
             src={navVideo}
             autoPlay
             muted
-            loop
             playsInline
             preload="auto"
             aria-hidden="true"
@@ -1134,7 +1152,7 @@ function Navbar({
                       </button>
                       <button
                         onClick={onRegisterClick}
-                        className="border border-white/25 px-3 xl:px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
+                        className="signup-attention border border-white/25 px-3 xl:px-5 py-2 font-mono text-[9px] tracking-[0.1em] uppercase text-white/85 hover:bg-white/10 hover:text-white hover:border-white/55 transition-all"
                       >
                         Sign Up
                       </button>
@@ -1190,19 +1208,21 @@ function Navbar({
                     </button>
                     {categoriesOpen && (
                       <div className="absolute right-0 top-full z-[100] min-w-56 overflow-hidden bg-[#0f1f3d] border border-white/25 shadow-2xl" role="menu">
-                        {MORE_CATEGORIES.map(cat => (
+                        {moreCategories.map(category => (
                           <button
-                            key={cat}
+                            key={category.id}
                             onClick={() => {
                               setCategoriesOpen(false);
-                              navigate({ type: "category", name: cat });
+                              navigate({ type: "category", name: category.name });
                             }}
                             className="block w-full text-left px-5 py-3.5 font-['IBM_Plex_Serif',serif] font-bold text-[11px] tracking-[0.06em] uppercase text-white/85 hover:bg-white/15 hover:text-white transition-colors"
                             role="menuitem"
                           >
-                            {cat}
+                            {category.name}
                           </button>
                         ))}
+                        {!categoriesLoaded && <p className="px-5 py-3.5 font-mono text-[9px] tracking-widest uppercase text-white/60">Loading categories...</p>}
+                        {categoriesLoaded && moreCategories.length === 0 && <p className="px-5 py-3.5 font-mono text-[9px] tracking-widest uppercase text-white/60">Categories unavailable</p>}
                       </div>
                     )}
                   </div>
@@ -1429,13 +1449,13 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           >
             <img src={hero.image} alt={hero.title} className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 p-8 md:p-10">
+            <div className="absolute inset-0 flex flex-col items-center justify-end p-8 md:p-10 text-center">
               <div className="bg-[rgba(30,58,138,0.08)] inline-block mb-3">
                 <span className="font-mono text-[#1e3a8a] text-[10px] tracking-widest uppercase px-2 py-1">
                   {hero.category}
                 </span>
               </div>
-              <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(2rem,3vw,3.25rem)] leading-[0.96] max-w-[18ch] break-words">
+              <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(2.5rem,4vw,4rem)] leading-[0.96] max-w-[18ch] break-words">
                 {hero.title}
               </h1>
               <div className="flex items-center gap-4 mt-4 font-mono text-[9px] text-white/60 tracking-widest uppercase">
@@ -1479,11 +1499,11 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
 
       {/* Two featured articles */}
       <section className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 border border-t-0 border-border">
-          {featuredTwo.map((article, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {featuredTwo.map((article) => (
             <div
               key={article.id}
-              className={`cursor-pointer group ${i === 0 ? "md:border-r border-border" : ""}`}
+              className="cursor-pointer group"
               onClick={() => navigate({ type: "article", id: article.id })}
             >
               <div className="overflow-hidden h-[280px]">

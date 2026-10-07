@@ -1,6 +1,12 @@
 import { strict as assert } from "node:assert";
 import { transformPost } from "../src/utils/transform.ts";
 import { groupAdjacentArticleImages } from "../src/utils/articleDisplay.ts";
+import { categorySlug } from "../src/utils/categorySlug.ts";
+
+assert.equal(categorySlug("Lifestyle"), "life-style");
+assert.equal(categorySlug("Life Style"), "life-style");
+assert.equal(categorySlug("Books"), "books");
+assert.equal(categorySlug("Leadership & Ideas"), "leadership-and-ideas");
 
 const post = {
   id: 12,

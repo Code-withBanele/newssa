@@ -1503,7 +1503,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           {featuredTwo.map((article) => (
             <div
               key={article.id}
-              className="cursor-pointer group"
+              className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
               onClick={() => navigate({ type: "article", id: article.id })}
             >
               <div className="overflow-hidden h-[280px]">
@@ -1541,7 +1541,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           {latestGrid.map(article => (
             <div
               key={article.id}
-              className="cursor-pointer group"
+              className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
               onClick={() => navigate({ type: "article", id: article.id })}
             >
               <div className="overflow-hidden h-[180px] mb-3">

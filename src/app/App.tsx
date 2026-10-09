@@ -1405,6 +1405,29 @@ function ScrollToTop() {
 // ============================================================
 // HOME PAGE
 // ============================================================
+function AdSenseUnit() {
+  useEffect(() => {
+    const adWindow = window as Window & { adsbygoogle?: Record<string, unknown>[] };
+    (adWindow.adsbygoogle ??= []).push({});
+  }, []);
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+      <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
+        Advertisement
+      </p>
+      <ins
+        className="adsbygoogle"
+        style={{ display: "block" }}
+        data-ad-client="ca-pub-1763033663267954"
+        data-ad-slot="1519715709"
+        data-ad-format="auto"
+        data-full-width-responsive="true"
+      />
+    </div>
+  );
+}
+
 function HomePage({ navigate }: { navigate: (p: Page) => void }) {
   const { featured: hero, secondary, loading, error } = useFeaturedPosts(20);
   const heroSidebar = secondary.slice(0, 3);
@@ -1496,6 +1519,8 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           </div>
         </div>
       </section>
+
+      <AdSenseUnit />
 
       {/* Two featured articles */}
       <section className="max-w-7xl mx-auto px-4 lg:px-8 py-4">

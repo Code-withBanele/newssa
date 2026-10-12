@@ -1348,7 +1348,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
           <div className="flex gap-4 mb-6">
             {[
              { icon: Twitter, label: "Twitter" , href : "https://x.com/NewsSA_Online" },
-              { icon: Facebook, label: "Facebook", href : "https://facebook.com/NewsSA" },
+              { icon: Facebook, label: "Facebook", href : "https://www.facebook.com/profile.php?id=61573945540538" },
               { icon: Instagram, label: "Instagram", href : "https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.instagram.com%2Fnewssa_online%3Ffbclid%3DIwcGRvZgVleHRuA2FlbQIxMABicmlkETF5RlJVWVI0aDZJYk9hd0ljc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuaOKm4LqthAZ3vzbcWvAi-b7bSluhrl7YRPFee2ma089SBoYbxih9RnlWsd_aem_Jix1SZK2WJ2pnykkobgrTg&h=AUBMo79nfKvj8RLL7qyVFE9D-bangfr5DK1IC9W5UIUWCCoCCNgU-r7k_TxuCw193ToHGQ97VTBu75G8QfqJ-I79Cc2R-L4hI-8UPL7eH3EmP5U_AnrQCfCpktC4Hrjq5nEA" },
               
             

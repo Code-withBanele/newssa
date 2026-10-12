@@ -40,6 +40,8 @@ import jumoImg from "@/imports/Body/d00a8dd0ba23d4101393c68a95a4bdfc5466b4f2.png
 import selloImg from "@/imports/Body/e4d6a2e1442cc46c9c05f6851f3a775028e65458.png";
 import sowetaImg from "@/imports/Body/cac906114b2abd100defababcde8e853ee603ace.png";
 import homePage1Img from "@/imports/Body/ccb9a0a56ff2339b740b103f0edfb47b2de0cdf9.png";
+import nwMediaAwardsAd from "@/imports/Body/1.png";
+import bookLaunchAd from "@/imports/Body/2.png";
 
 // --- Types ---
 type Page =
@@ -1029,7 +1031,7 @@ function Navbar({
             <div className="relative border-b border-white/10">
               <span aria-hidden="true" className="absolute inset-0 border border-white/15 bg-black/25 shadow-lg shadow-black/20 backdrop-blur-[2px]" />
               {/* Three-column: [left spacer] [centered logo] [right controls] */}
-              <div className="relative max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 flex items-center min-h-20 lg:h-24">
+              <div className="relative w-full max-w-7xl mx-auto px-3 max-[405px]:px-2 sm:px-4 lg:px-6 xl:px-8 flex items-center min-h-20 lg:h-24">
 
                 {/* Left — desktop only spacer that matches right side width */}
                 <div className="hidden lg:flex flex-1 items-center" />
@@ -1037,12 +1039,12 @@ function Navbar({
                 {/* Center — logo lockup, always centered */}
                 <button
                   onClick={() => navigate({ type: "home" })}
-                  className="relative flex items-center gap-2 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 lg:px-3 py-2 max-w-full cursor-pointer"
+                  className="relative flex items-center gap-2 max-[405px]:gap-1 lg:gap-3 xl:gap-4 shrink-0 mx-auto px-2 max-[405px]:px-0 lg:px-3 py-2 max-w-full cursor-pointer"
                 >
-                  <img src={logoImg} alt="News SA" className="w-16 h-16 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
-                  <div className="flex flex-col">
+                  <img src={logoImg} alt="News SA" className="w-16 h-16 max-[405px]:w-12 max-[405px]:h-12 lg:w-[84px] lg:h-[84px] xl:w-[100px] xl:h-[100px] object-cover shrink-0" />
+                  <div className="flex min-w-0 flex-col">
                     <p
-                      className="brand-wordmark font-['IBM_Plex_Serif',serif] text-white font-black tracking-wide leading-none text-[19px] lg:text-[26px] xl:text-[45px] whitespace-nowrap"
+                      className="brand-wordmark font-['IBM_Plex_Serif',serif] text-white font-black tracking-wide leading-none text-[19px] max-[405px]:text-[15px] lg:text-[26px] xl:text-[45px] whitespace-nowrap"
                     >
                       NEWS SOUTH AFRICA
                     </p>
@@ -1161,16 +1163,16 @@ function Navbar({
                 </div>
 
                 {/* Mobile: search + hamburger */}
-                <div className="flex lg:hidden items-center gap-1">
+                <div className="flex lg:hidden items-center gap-1 max-[405px]:gap-0">
                   <button
                     onClick={() => setSearchOverlayOpen(true)}
-                    className="p-2 text-white/70 hover:text-white transition-colors"
+                    className="p-2 max-[405px]:hidden text-white/70 hover:text-white transition-colors"
                     aria-label="Search"
                   >
                     <Search size={18} />
                   </button>
                   <button
-                    className="p-2 text-white"
+                    className="p-2 max-[405px]:p-1.5 text-white"
                     onClick={() => setMobileOpen(v => !v)}
                     aria-label="Menu"
                   >
@@ -1182,8 +1184,8 @@ function Navbar({
 
             {/* Category nav */}
             <div className="hidden lg:block border-t border-white/10">
-              <div className="max-w-7xl mx-auto px-4 lg:px-8">
-                <nav className="flex items-center justify-center gap-0 xl:gap-1">
+              <div className="w-full px-2 xl:px-8">
+                <nav className="flex w-full items-center justify-between gap-0 xl:gap-1">
                   {NAV_CATEGORIES.map(cat => (
                     <button
                       key={cat}
@@ -1256,7 +1258,13 @@ function Navbar({
                 )}
               </div>
             )}
-            <nav className="max-w-7xl mx-auto px-4 py-4 flex flex-col gap-1">
+            <nav className="w-full px-4 max-[405px]:px-3 py-4 flex flex-col gap-1">
+              <button
+                onClick={() => { setSearchOverlayOpen(true); setMobileOpen(false); }}
+                className="hidden max-[405px]:flex items-center gap-2 text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
+              >
+                <Search size={14} /> Search
+              </button>
               <button
                 onClick={() => user ? setUserMenuOpen(v => !v) : (() => { onLoginClick(); setMobileOpen(false); })()}
                 className="flex items-center gap-2 text-left py-3 font-['Inter',sans-serif] font-semibold text-[11px] tracking-[0.06em] uppercase text-white/75 hover:text-accent transition-colors border-b border-white/8"
@@ -1405,31 +1413,31 @@ function ScrollToTop() {
 // ============================================================
 // HOME PAGE
 // ============================================================
-function AdSenseUnit() {
-  useEffect(() => {
-    const adWindow = window as Window & { adsbygoogle?: Record<string, unknown>[] };
-    (adWindow.adsbygoogle ??= []).push({});
-  }, []);
-
+function NewsMediaAwardsAd() {
   return (
     <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
       <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
         Advertisement
       </p>
-      <ins
-        className="adsbygoogle"
-        style={{ display: "block" }}
-        data-ad-client="ca-pub-1763033663267954"
-        data-ad-slot="1519715709"
-        data-ad-format="auto"
-        data-full-width-responsive="true"
-      />
+      <a
+        href="https://www.nwmediaawards.co.za"
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Visit the North West Media Awards website"
+        className="block overflow-hidden"
+      >
+        <img
+          src={nwMediaAwardsAd}
+          alt="Vote for News South Africa as Online Media House of the Year at the North West Media Awards 2026"
+          className="block h-auto w-full"
+        />
+      </a>
     </div>
   );
 }
 
 function HomePage({ navigate }: { navigate: (p: Page) => void }) {
-  const { featured: hero, secondary, loading, error } = useFeaturedPosts(20);
+  const { featured: hero, secondary, loading, error } = useFeaturedPosts(24);
   const heroSidebar = secondary.slice(0, 3);
   const featuredTwo = secondary.slice(3, 5);
   const latestGrid = secondary.slice(5, 9);
@@ -1437,6 +1445,18 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
   const politicsFeature = secondary[13] ?? null;
   const trending = secondary.slice(0, 6);
   const mostRead = secondary.slice(4, 10);
+  const businessSidebarCandidates = secondary.slice(18).filter(a =>
+    !a.title.startsWith("CHINA HOMELIFE SOUTH AFRICA 2026 DRAWS TO A CLOSE")
+  );
+  const businessSidebarLead = businessSidebarCandidates[0];
+  const businessSidebarArticles = businessSidebarLead
+    ? [
+        businessSidebarLead,
+        businessSidebarCandidates.find((a, index) =>
+          index > 0 && a.category !== businessSidebarLead.category
+        ),
+      ].filter((article): article is Article => article !== undefined)
+    : [];
   const seo = <SeoHead title="News South Africa | NewsSA" description="Independent news and events from South Africa, Africa and the world, published by News South Africa." path="/" keywords={["South Africa news", "Africa news", "NewsSA"]} />;
   // WordPress not connected
   if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
@@ -1520,7 +1540,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
         </div>
       </section>
 
-      <AdSenseUnit />
+      <NewsMediaAwardsAd />
 
       {/* Two featured articles */}
       <section className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
@@ -1595,6 +1615,16 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
             />
           ))}
         </div>
+        <div className="mt-8">
+          <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
+            Advertisement
+          </p>
+          <img
+            src={bookLaunchAd}
+            alt="Book launch for Isaiah Bud-M'belle: The Life of Isaiah Budlwana M'belle, 1870–1947, at The Ark @1349"
+            className="block h-auto w-full"
+          />
+        </div>
       </section>
 
       {/* Politics + Business sections */}
@@ -1630,7 +1660,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 </div>
               </div>
               <div className="flex flex-col gap-1">
-                {secondary.slice(14, 17).map(a => (
+                {secondary.slice(14, 17).filter(a => !a.title.toLowerCase().includes("history brought us to a crossroads")).map(a => (
                   <button
                     key={a.id}
                     onClick={() => navigate({ type: "article", id: a.id })}
@@ -1678,9 +1708,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               </div>
               )}
               <div className="flex flex-col gap-1">
-                {secondary.slice(18, 20).filter(a =>
-                  !a.title.startsWith("CHINA HOMELIFE SOUTH AFRICA 2026 DRAWS TO A CLOSE")
-                ).map(a => (
+                {businessSidebarArticles.map(a => (
                   <button
                     key={a.id}
                     onClick={() => navigate({ type: "article", id: a.id })}
@@ -2156,6 +2184,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
 
         </aside>
       </div>
+      <NewsMediaAwardsAd />
     </main>
     {imageViewer && imageViewer.images[imageViewer.index] && (
       <div

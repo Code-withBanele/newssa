@@ -112,7 +112,7 @@ export function NotConfiguredState() {
           WordPress installation.
         </p>
         <p className="font-mono text-[10px] text-muted-foreground mt-3 bg-muted px-3 py-2 inline-block">
-          VITE_WORDPRESS_API=https://your-site.com/wp-json/wp/v2
+          VITE_WORDPRESS_API=https://newssa.fit/wp-json/wp/v2
         </p>
       </div>
     </div>

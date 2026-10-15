@@ -1,8 +1,9 @@
 import { useEffect } from "react";
-import logoImg from "../imports/Body/23028179d84c8ac263f16970552b2d9e23bb08f9.png";
+import { SITE_URL } from "../utils/site";
 
-export const SITE_URL = (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, "") || "https://newssa.co.za";
+export { SITE_URL };
 export const SITE_NAME = "News South Africa";
+const logoImg = "/newssa-logo.png";
 
 export interface SeoMetadata {
   title: string;

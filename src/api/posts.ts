@@ -31,7 +31,7 @@ export async function fetchPostBySlug(slug: string): Promise<WPPost | null> {
     slug,
     _embed: "author,wp:featuredmedia,wp:term",
   });
-  return data[0] ?? null;
+  return data.find(post => post.slug === slug && post.status === "publish") ?? null;
 }
 
 export async function fetchFeaturedPosts(count = 6): Promise<WPPost[]> {

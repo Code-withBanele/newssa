@@ -8,17 +8,20 @@ interface UsePostState {
   error: string | null;
 }
 
-export function usePost(id: number): UsePostState {
+export function usePost(identifier: number | string): UsePostState {
   const [state, setState] = useState<UsePostState>({ article: null, loading: true, error: null });
 
   useEffect(() => {
     let cancelled = false;
     setState({ article: null, loading: true, error: null });
 
-    fetchPost(id)
+    const request = typeof identifier === "number" ? fetchPost(identifier) : fetchPostBySlug(identifier);
+    request
       .then(post => {
         if (cancelled) return;
-        setState({ article: transformPost(post), loading: false, error: null });
+        setState(post
+          ? { article: transformPost(post), loading: false, error: null }
+          : { article: null, loading: false, error: "Article not found." });
       })
       .catch((err: Error) => {
         if (cancelled) return;
@@ -26,35 +29,11 @@ export function usePost(id: number): UsePostState {
       });
 
     return () => { cancelled = true; };
-  }, [id]);
+  }, [identifier]);
 
   return state;
 }
 
 export function usePostBySlug(slug: string): UsePostState {
-  const [state, setState] = useState<UsePostState>({ article: null, loading: true, error: null });
-
-  useEffect(() => {
-    if (!slug) return;
-    let cancelled = false;
-    setState({ article: null, loading: true, error: null });
-
-    fetchPostBySlug(slug)
-      .then(post => {
-        if (cancelled) return;
-        setState({
-          article: post ? transformPost(post) : null,
-          loading: false,
-          error: post ? null : "Article not found.",
-        });
-      })
-      .catch((err: Error) => {
-        if (cancelled) return;
-        setState({ article: null, loading: false, error: err.message });
-      });
-
-    return () => { cancelled = true; };
-  }, [slug]);
-
-  return state;
+  return usePost(slug);
 }

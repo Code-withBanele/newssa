@@ -25,13 +25,13 @@ export interface PagedResponse<T> {
 
 function buildUrl(path: string, params?: Record<string, string | number | boolean>): string {
   if (!BASE_URL) {
-    throw new ApiError(0, "WordPress API URL not configured. Set VITE_WORDPRESS_API in your .env file to your WP REST endpoint, for example https://your-site.com/wp-json/wp/v2");
+    throw new ApiError(0, "WordPress API URL not configured. Set VITE_WORDPRESS_API in your .env file to your WP REST endpoint, for example https://newssa.fit/wp-json/wp/v2");
   }
 
   try {
     new URL(BASE_URL);
   } catch {
-    throw new ApiError(0, "WordPress API URL is invalid. Set VITE_WORDPRESS_API to a full URL like https://your-site.com/wp-json/wp/v2");
+    throw new ApiError(0, "WordPress API URL is invalid. Set VITE_WORDPRESS_API to a full URL like https://newssa.fit/wp-json/wp/v2");
   }
 
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;

@@ -14,6 +14,7 @@ import { useCategory } from "../hooks/useCategory";
 import { useFeaturedPosts } from "../hooks/useFeaturedPosts";
 import { useSearch } from "../hooks/useSearch";
 import { categorySlug } from "../utils/categorySlug";
+import { articlePath, ArticleRoute, isUsableArticleSlug, parseArticleRouteSegment } from "../utils/articleRouting";
 import type { WPCategory } from "../types/wordpress";
 import { SeoHead } from "./SeoHead";
 import {
@@ -27,7 +28,6 @@ import {
 
 // --- Image imports from Figma design ---
 import navVideo from "@/imports/vecteezy_multimedia-screens-recording-translation-broadcast-record-tv_49532703.mp4";
-import logoImg from "@/imports/Body/23028179d84c8ac263f16970552b2d9e23bb08f9.png";
 import heroImg from "@/imports/Body/39e4919faba4198282e1b875842f8570b475addb.png";
 import glacierImg from "@/imports/Body/89bd8856bac3f831a7d919359761c70b84923043.png";
 import aiImg from "@/imports/Body/5c8b40ccfbd6b7f29412c693d40841181e813927.png";
@@ -42,12 +42,13 @@ import sowetaImg from "@/imports/Body/cac906114b2abd100defababcde8e853ee603ace.p
 import homePage1Img from "@/imports/Body/ccb9a0a56ff2339b740b103f0edfb47b2de0cdf9.png";
 import nwMediaAwardsAd from "@/imports/Body/1.png";
 import bookLaunchAd from "@/imports/Body/2.png";
+const logoImg = "/newssa-logo.png";
 
 // --- Types ---
 type Page =
   | { type: "home" }
   | { type: "category"; name: string }
-  | { type: "article"; id: number }
+  | ({ type: "article" } & ArticleRoute)
   | { type: "search"; query: string }
   | { type: "saved" }
   | { type: "about" }
@@ -463,7 +464,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                 {trendingArticles.map((a, i) => (
                   <button
                     key={a.id}
-                    onClick={() => { onClose(); navigate({ type: "article", id: a.id }); }}
+                    onClick={() => { onClose(); navigate(articlePage(a)); }}
                     className="w-full text-left flex items-center gap-3 py-3 hover:bg-secondary/40 transition-colors group px-2 -mx-2 rounded"
                   >
                     <span className="font-['IBM_Plex_Serif',serif] font-black text-foreground/12 text-xl w-7 shrink-0 leading-none">
@@ -529,7 +530,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                       key={a.id}
                       article={a}
                       query=""
-                      onClick={() => { onClose(); navigate({ type: "article", id: a.id }); }}
+                      onClick={() => { onClose(); navigate(articlePage(a)); }}
                     />
                   ))}
                 </div>
@@ -559,7 +560,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                     key={article.id}
                     article={article}
                     query={query}
-                    onClick={() => { onClose(); navigate({ type: "article", id: article.id }); }}
+                    onClick={() => { onClose(); navigate(articlePage(article)); }}
                   />
                 ))}
               </div>
@@ -620,9 +621,16 @@ type AuthUser = AccountUser & { name: string };
 
 type LatestRead = {
   id: number;
+  slug?: string;
   title: string;
   readAt: string;
 };
+
+function articlePage(article: { id: number; slug?: string }): Page {
+  return isUsableArticleSlug(article.slug)
+    ? { type: "article", slug: article.slug }
+    : { type: "article", id: article.id };
+}
 
 function maskEmail(email: string) {
   const [local, domain] = email.split("@");
@@ -1108,7 +1116,7 @@ function Navbar({
                                   {latestReads.map(read => (
                                     <button
                                       key={read.id}
-                                      onClick={() => { setUserMenuOpen(false); navigate({ type: "article", id: read.id }); }}
+                                      onClick={() => { setUserMenuOpen(false); navigate(articlePage(read)); }}
                                       className="text-left font-['Inter',sans-serif] text-xs font-semibold text-foreground/75 hover:bg-secondary hover:text-accent px-2 py-1.5 transition-colors"
                                     >
                                       {read.title}
@@ -1248,7 +1256,7 @@ function Navbar({
                     {latestReads.slice(0, 3).map(read => (
                       <button
                         key={read.id}
-                        onClick={() => { setMobileOpen(false); navigate({ type: "article", id: read.id }); }}
+                        onClick={() => { setMobileOpen(false); navigate(articlePage(read)); }}
                         className="block w-full text-left py-1.5 font-['Inter',sans-serif] text-xs font-semibold text-white/70 hover:text-accent transition-colors truncate"
                       >
                         {read.title}
@@ -1488,25 +1496,27 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
           {/* Main hero */}
           <div
             className="relative cursor-pointer group overflow-hidden min-h-[480px]"
-            onClick={() => navigate({ type: "article", id: hero.id })}
+            onClick={() => navigate(articlePage(hero))}
           >
             <img src={hero.image} alt={hero.title} className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
-            <div className="absolute inset-0 flex flex-col items-center justify-end p-8 md:p-10 text-center">
-              <div className="bg-[rgba(30,58,138,0.08)] inline-block mb-3">
-                <span className="font-mono text-[#1e3a8a] text-[10px] tracking-widest uppercase px-2 py-1">
-                  {hero.category}
-                </span>
-              </div>
-              <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(2.5rem,4vw,4rem)] leading-[0.96] max-w-[18ch] break-words">
-                {hero.title}
-              </h1>
-              <div className="flex items-center gap-4 mt-4 font-mono text-[9px] text-white/60 tracking-widest uppercase">
-                <span>{hero.author}</span>
-                <span>·</span>
-                <span>{hero.timeAgo}</span>
-                <span>·</span>
-                <span>{hero.readTime}</span>
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
+            <div className="absolute inset-0 flex flex-col items-center justify-end p-6 md:p-10 text-center">
+              <div className="w-full bg-gradient-to-t from-black/55 via-black/25 to-transparent px-3 pt-10 pb-2 md:px-5 md:pt-12">
+                <div className="bg-[rgba(30,58,138,0.08)] inline-block mb-3">
+                  <span className="font-mono text-[#1e3a8a] text-[10px] tracking-widest uppercase px-2 py-1">
+                    {hero.category}
+                  </span>
+                </div>
+                <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(1.5rem,3vw,3rem)] leading-[1.05] max-w-[28ch] mx-auto break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.85)]">
+                  {hero.title}
+                </h1>
+                <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 mt-4 font-mono text-[9px] text-white/75 tracking-widest uppercase">
+                  <span>{hero.author}</span>
+                  <span>·</span>
+                  <span>{hero.timeAgo}</span>
+                  <span>·</span>
+                  <span>{hero.readTime}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -1521,7 +1531,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               {heroSidebar.map((a, i) => (
                 <button
                   key={a.id}
-                  onClick={() => navigate({ type: "article", id: a.id })}
+                  onClick={() => navigate(articlePage(a))}
                   className="w-full text-left flex gap-4 items-start px-7 py-5 border-t border-border cursor-pointer hover:bg-secondary/40 transition-all group"
                 >
                   <span className="font-['IBM_Plex_Serif',serif] font-black text-foreground/10 text-lg shrink-0">
@@ -1549,7 +1559,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
             <div
               key={article.id}
               className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
-              onClick={() => navigate({ type: "article", id: article.id })}
+              onClick={() => navigate(articlePage(article))}
             >
               <div className="overflow-hidden h-[280px]">
                 <img
@@ -1587,7 +1597,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
             <div
               key={article.id}
               className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
-              onClick={() => navigate({ type: "article", id: article.id })}
+              onClick={() => navigate(articlePage(article))}
             >
               <div className="overflow-hidden h-[180px] mb-3">
                 <img
@@ -1611,7 +1621,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
             <ArticleCardSmall
               key={article.id}
               article={article}
-              onClick={() => navigate({ type: "article", id: article.id })}
+              onClick={() => navigate(articlePage(article))}
             />
           ))}
         </div>
@@ -1640,7 +1650,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
             <div className="grid grid-cols-[1fr_180px] gap-6 items-start">
               <div
                 className="cursor-pointer group"
-                onClick={() => navigate({ type: "article", id: politicsFeature.id })}
+                onClick={() => navigate(articlePage(politicsFeature))}
               >
                 <div className="overflow-hidden h-[200px] mb-3">
                   <img
@@ -1663,7 +1673,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 {secondary.slice(14, 17).filter(a => !a.title.toLowerCase().includes("history brought us to a crossroads")).map(a => (
                   <button
                     key={a.id}
-                    onClick={() => navigate({ type: "article", id: a.id })}
+                    onClick={() => navigate(articlePage(a))}
                     className="text-left border-b border-border pb-4 mb-1 hover:text-accent transition-colors"
                   >
                     <CategoryBadge category={a.category} small />
@@ -1687,7 +1697,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               {secondary[17] && (
               <div
                 className="cursor-pointer group"
-                onClick={() => navigate({ type: "article", id: secondary[17].id })}
+                onClick={() => navigate(articlePage(secondary[17]))}
               >
                 <div className="overflow-hidden h-[200px] mb-3">
                   <img
@@ -1711,7 +1721,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 {businessSidebarArticles.map(a => (
                   <button
                     key={a.id}
-                    onClick={() => navigate({ type: "article", id: a.id })}
+                    onClick={() => navigate(articlePage(a))}
                     className="text-left border-b border-border pb-4 mb-1"
                   >
                     <CategoryBadge category={a.category} small />
@@ -1737,7 +1747,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <ArticleCardSmall
                   key={a.id}
                   article={a}
-                  onClick={() => navigate({ type: "article", id: a.id })}
+                  onClick={() => navigate(articlePage(a))}
                   index={i}
                 />
               ))}
@@ -1749,7 +1759,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <ArticleCardSmall
                 key={a.id}
                 article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
+                onClick={() => navigate(articlePage(a))}
                 index={i}
               />
             ))}
@@ -1817,7 +1827,7 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-10">
-          {articles.map(article => <ArticleCardMedium key={article.id} article={article} onClick={() => navigate({ type: "article", id: article.id })} />)}
+          {articles.map(article => <ArticleCardMedium key={article.id} article={article} onClick={() => navigate(articlePage(article))} />)}
         </div>
       )}
     </main>
@@ -1825,8 +1835,9 @@ function SavedArticlesPage({ navigate, user, onRequireLogin }: { navigate: (p: P
   );
 }
 
-function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navigate: (p: Page) => void; user: AuthUser | null; onRequireLogin: () => void }) {
-  const { article, loading, error } = usePost(id);
+function ArticlePage({ route, navigate, user, onRequireLogin }: { route: ArticleRoute; navigate: (p: Page) => void; user: AuthUser | null; onRequireLogin: () => void }) {
+  const identifier = "id" in route ? route.id : route.slug;
+  const { article, loading, error } = usePost(identifier);
   const [saved, setSaved] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -1838,7 +1849,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
   );
   const { articles: trending } = usePosts({ per_page: 5, orderby: "date" }, []);
 
-  useEffect(() => { window.scrollTo(0, 0); }, [id]);
+  useEffect(() => { window.scrollTo(0, 0); }, [identifier]);
 
   useEffect(() => {
     if (!user || !article) return;
@@ -1846,7 +1857,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
     try {
       const stored = JSON.parse(localStorage.getItem(key) ?? "[]") as LatestRead[];
       const next = [
-        { id: article.id, title: article.title, readAt: new Date().toISOString() },
+        { id: article.id, slug: article.slug, title: article.title, readAt: new Date().toISOString() },
         ...stored.filter(read => read.id !== article.id),
       ].slice(0, 5);
       localStorage.setItem(key, JSON.stringify(next));
@@ -1854,9 +1865,9 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
   }, [article, user]);
 
   useEffect(() => {
-    if (!user) return;
-    getSavedArticles().then(result => setSaved(result.articles.some(item => item.articleId === id))).catch(() => setSaved(false));
-  }, [id, user]);
+    if (!user || !article) return;
+    getSavedArticles().then(result => setSaved(result.articles.some(item => item.articleId === article.id))).catch(() => setSaved(false));
+  }, [article?.id, user]);
 
   useEffect(() => {
     if (!imageViewerOpen) return;
@@ -1886,7 +1897,9 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
     };
   }, [imageViewerOpen]);
 
-  const articlePath = `/article/${id}`;
+  const canonicalArticlePath = article
+    ? articlePath(article)
+    : "slug" in route ? `/article/${encodeURIComponent(route.slug)}` : articlePath({ id: route.id });
   const articleBodyBlocks = article
     ? (article.content.length > 0
       ? article.content
@@ -1897,23 +1910,24 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
   const seo = <SeoHead
     title={article ? `${article.title} | NewsSA` : "Article | NewsSA"}
     description={article?.subtitle || "Read the latest independent news from News South Africa."}
-    path={articlePath}
+    path={canonicalArticlePath}
     type="article"
     image={article?.image}
     author={article?.authorAvailable ? article.author : undefined}
     section={article?.category}
     publishedTime={article?.publishedAt}
     modifiedTime={article?.modifiedAt}
-    breadcrumbs={article ? [{ name: "Home", path: "/" }, { name: article.category, path: `/category/${article.category.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and")}` }, { name: article.title, path: articlePath }] : undefined}
+    breadcrumbs={article ? [{ name: "Home", path: "/" }, { name: article.category, path: `/category/${article.category.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "and")}` }, { name: article.title, path: canonicalArticlePath }] : undefined}
   />;
 
   async function toggleSaved() {
     if (!user) { onRequireLogin(); return; }
+    if (!article) return;
     setSaveLoading(true);
     setSaveError("");
     try {
-      if (saved) await unsaveArticle(id);
-      else await saveArticle(id);
+      if (saved) await unsaveArticle(article.id);
+      else await saveArticle(article.id);
       setSaved(current => !current);
     } catch { setSaveError("We couldn't update your saved articles. Please try again."); }
     finally { setSaveLoading(false); }
@@ -2123,7 +2137,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
           <div className="mt-10 grid grid-cols-2 gap-4 border-t border-border pt-6">
             {prevArticle && (
               <button
-                onClick={() => navigate({ type: "article", id: prevArticle.id })}
+                onClick={() => navigate(articlePage(prevArticle))}
                 className="text-left border border-border p-4 hover:border-foreground/30 transition-colors group"
               >
                 <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
@@ -2137,7 +2151,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
             {!prevArticle && <div />}
             {nextArticle && (
               <button
-                onClick={() => navigate({ type: "article", id: nextArticle.id })}
+                onClick={() => navigate(articlePage(nextArticle))}
                 className="text-right border border-border p-4 hover:border-foreground/30 transition-colors group"
               >
                 <div className="flex items-center justify-end gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
@@ -2163,7 +2177,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
                 <ArticleCardHorizontal
                   key={a.id}
                   article={a}
-                  onClick={() => navigate({ type: "article", id: a.id })}
+                  onClick={() => navigate(articlePage(a))}
                 />
               ))}
             </div>
@@ -2176,7 +2190,7 @@ function ArticlePage({ id, navigate, user, onRequireLogin }: { id: number; navig
               <ArticleCardSmall
                 key={a.id}
                 article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
+                onClick={() => navigate(articlePage(a))}
                 index={i}
               />
             ))}
@@ -2334,7 +2348,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                 <SectionHeader title="Featured" color={meta.textColor} />
                 <div
                   className="cursor-pointer group border border-border overflow-hidden"
-                  onClick={() => navigate({ type: "article", id: featured.id })}
+                  onClick={() => navigate(articlePage(featured))}
                 >
                   <div className="overflow-hidden h-[320px]">
                     <img
@@ -2368,7 +2382,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                 <ArticleCardMedium
                   key={article.id}
                   article={article}
-                  onClick={() => navigate({ type: "article", id: article.id })}
+                  onClick={() => navigate(articlePage(article))}
                 />
               ))}
             </div>
@@ -2410,7 +2424,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
               <ArticleCardSmall
                 key={a.id}
                 article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
+                onClick={() => navigate(articlePage(a))}
                 index={i}
               />
             ))}
@@ -2480,7 +2494,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
               <div
                 key={article.id}
                 className="cursor-pointer group flex gap-5 border-b border-border py-6 last:border-0"
-                onClick={() => navigate({ type: "article", id: article.id })}
+                onClick={() => navigate(articlePage(article))}
               >
                 <div className="shrink-0 w-32 h-24 overflow-hidden hidden md:block">
                   <img
@@ -2527,7 +2541,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
               <ArticleCardSmall
                 key={a.id}
                 article={a}
-                onClick={() => navigate({ type: "article", id: a.id })}
+                onClick={() => navigate(articlePage(a))}
                 index={i}
               />
             ))}
@@ -2762,8 +2776,9 @@ function pageFromPath(pathname: string): Page {
     return { type: "category", name: normalizeCategoryName(slug) };
   }
 
-  const articleMatch = pathname.match(/^\/article\/(\d+)\/?$/);
-  if (articleMatch) return { type: "article", id: Number(articleMatch[1]) };
+  const articleMatch = pathname.match(/^\/article\/([^/]+)\/?$/);
+  const articleRoute = articleMatch ? parseArticleRouteSegment(articleMatch[1]) : null;
+  if (articleRoute) return { type: "article", ...articleRoute };
   if (pathname === "/") {
     const query = new URLSearchParams(window.location.search).get("search")?.trim();
     return query ? { type: "search", query } : { type: "home" };
@@ -2777,7 +2792,9 @@ function pagePath(page: Page): string {
     const slug = toCategorySlug(page.name);
     return `/category/${slug}`;
   }
-  if (page.type === "article") return `/article/${page.id}`;
+  if (page.type === "article") {
+    return "slug" in page ? `/article/${encodeURIComponent(page.slug)}` : articlePath({ id: page.id });
+  }
   if (page.type === "search") return `/?search=${encodeURIComponent(page.query)}`;
   if (page.type === "saved") return "/saved";
   if (page.type === "about") return "/about";
@@ -2836,7 +2853,7 @@ export default function App() {
         if (currentPage.name === "Contact") return <ContactPage />;
         return <CategoryPage name={currentPage.name} navigate={navigate} />;
       case "article":
-        return <ArticlePage id={currentPage.id} navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
+        return <ArticlePage route={currentPage} navigate={navigate} user={user} onRequireLogin={() => { setAuthMode("login"); setLoginOpen(true); }} />;
       case "search":
         return <SearchPage query={currentPage.query} navigate={navigate} />;
       case "saved":

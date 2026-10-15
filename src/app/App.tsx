@@ -1952,7 +1952,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
 
   if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
   if (loading) return (
-    <><SeoHead title="Article | NewsSA" description="Read the latest independent news from News South Africa." path={articlePath} type="article" /><main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
+    <><SeoHead title="Article | NewsSA" description="Read the latest independent news from News South Africa." path={canonicalArticlePath} type="article" /><main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
       <div className="max-w-2xl mx-auto flex flex-col gap-4">
         {Array.from({ length: 6 }, (_, i) => <ArticleCardSkeleton key={i} />)}
       </div>

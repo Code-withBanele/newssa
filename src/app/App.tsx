@@ -1008,7 +1008,7 @@ function Navbar({
       />
 
       <header
-        className={`sticky top-0 z-50 transition-shadow ${scrolled ? "shadow-xl shadow-black/40" : ""}`}
+        className={`sticky top-0 z-50 w-full shrink-0 transition-shadow ${scrolled ? "shadow-xl shadow-black/40" : ""}`}
       >
         <div className="relative">
 
@@ -1966,10 +1966,10 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
   return (
     <>
       {seo}
-    <main className="max-w-7xl mx-auto px-4 lg:px-8 py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
+    <main className="w-full max-w-7xl mx-auto px-4 lg:px-8 py-10">
+      <div className="grid min-w-0 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_320px] gap-12">
         {/* Main content */}
-        <article>
+        <article className="min-w-0">
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 mb-6">
             <button onClick={() => navigate({ type: "home" })} className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors">
@@ -2872,7 +2872,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen w-full min-w-0 overflow-x-clip bg-background text-foreground flex flex-col">
       <Preloader visible={preloading} />
       {loginOpen && (
         <LoginModal
@@ -2888,7 +2888,7 @@ export default function App() {
         onRegisterClick={() => { setAuthMode("register"); setLoginOpen(true); }}
         onLogout={handleLogout}
       />
-      <div className="flex-1">{renderPage()}</div>
+      <div className="w-full min-w-0 flex-1">{renderPage()}</div>
       <Footer navigate={navigate} />
       <CookieConsent navigate={navigate} />
       <ScrollToTop />

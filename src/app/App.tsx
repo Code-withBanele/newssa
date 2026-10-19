@@ -189,7 +189,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <div className="absolute bottom-0 left-0 p-8">
           <CategoryBadge category={article.category} />
-          <h2 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[30px] leading-tight mt-3 max-w-2xl">
+          <h2 className="font-['Poppins',sans-serif] font-bold text-white text-[30px] leading-tight mt-3 max-w-2xl">
             {article.title}
           </h2>
           <div className="flex items-center gap-4 mt-4 text-white/60 font-mono text-[9px] tracking-widest uppercase">
@@ -216,7 +216,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
         />
       </div>
       <CategoryBadge category={article.category} small />
-      <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
+      <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
         {article.title}
       </h3>
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
@@ -242,7 +242,7 @@ function ArticleCardSmall({ article, onClick, index }: { article: Article; onCli
       )}
       <div className="flex-1 min-w-0">
         {index === undefined && <CategoryBadge category={article.category} small />}
-        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
+        <h4 className="font-['Poppins',sans-serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
           {article.title}
         </h4>
         <p className="font-mono text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
@@ -266,7 +266,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       </div>
       <div className="flex-1 min-w-0">
         <CategoryBadge category={article.category} small />
-        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
+        <h4 className="font-['Poppins',sans-serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
           {article.title}
         </h4>
         <div className="flex items-center gap-2 mt-2 text-foreground/65 font-mono text-[10px] tracking-wider uppercase">
@@ -324,7 +324,7 @@ function SearchResultCard({ article, query, onClick }: {
           <CategoryBadge category={article.category} small />
           <span className="font-mono text-[8px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
         </div>
-        <h4 className="font-['IBM_Plex_Serif',serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
+        <h4 className="font-['Poppins',sans-serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
           {highlightText(article.title, query)}
         </h4>
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
@@ -471,7 +471,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                       {i + 1}
                     </span>
                     <CategoryBadge category={a.category} small />
-                    <span className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1 flex-1">
+                    <span className="font-['Poppins',sans-serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1 flex-1">
                       {a.title}
                     </span>
                     <span className="font-mono text-[8px] text-muted-foreground shrink-0">{a.timeAgo}</span>
@@ -1507,7 +1507,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     {hero.category}
                   </span>
                 </div>
-                <h1 className="font-['IBM_Plex_Serif',serif] font-black text-white text-[clamp(1.5rem,3vw,3rem)] leading-[1.05] max-w-[28ch] mx-auto break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.85)]">
+                <h1 className="font-['Poppins',sans-serif] font-bold text-white text-[clamp(1.5rem,3vw,3rem)] leading-[1.05] max-w-[28ch] mx-auto break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.85)]">
                   {hero.title}
                 </h1>
                 <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 mt-4 font-mono text-[9px] text-white/75 tracking-widest uppercase">
@@ -1538,7 +1538,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     {i + 1}
                   </span>
                   <div>
-                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
+                    <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.timeAgo}</p>
@@ -1570,7 +1570,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               </div>
               <div className="p-7">
                 <CategoryBadge category={article.category} small />
-                <h2 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-xl leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h2 className="font-['Poppins',sans-serif] font-bold text-foreground text-xl leading-snug mt-2 group-hover:text-accent transition-colors">
                   {article.title}
                 </h2>
                 <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2">
@@ -1607,7 +1607,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 />
               </div>
               <CategoryBadge category={article.category} small />
-              <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
+              <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
                 {article.title}
               </h3>
               <p className="font-mono text-[9px] text-muted-foreground mt-2">{article.author} · {article.timeAgo}</p>
@@ -1660,7 +1660,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   />
                 </div>
                 <CategoryBadge category="Politics" small />
-                <h3 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {politicsFeature.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
@@ -1677,7 +1677,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     className="text-left border-b border-border pb-4 mb-1 hover:text-accent transition-colors"
                   >
                     <CategoryBadge category={a.category} small />
-                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
+                    <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
@@ -1707,7 +1707,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   />
                 </div>
                 <CategoryBadge category={secondary[17].category} small />
-                <h3 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {secondary[17].title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
@@ -1725,7 +1725,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     className="text-left border-b border-border pb-4 mb-1"
                   >
                     <CategoryBadge category={a.category} small />
-                    <p className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
+                    <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
                     <p className="font-mono text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
@@ -1984,12 +1984,22 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             </button>
           </div>
 
-          {/* Category + centered headline + author */}
+   
+
+          {/* Hero image */}
+          <div className="mt-8 mb-8 overflow-hidden">
+            <img src={article.image} alt={article.title} className="w-full h-[400px] object-cover" />
+            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
+              Image: News South Africa / Associated Press
+            </p>
+          </div>
+
+                 {/* Category + centered headline + author */}
           <div className="text-center">
             <CategoryBadge category={article.category} />
             <h1
-              className="mt-4 break-words max-w-full text-foreground text-[clamp(2.2rem,4vw,4rem)] leading-[0.96]"
-              style={{ fontFamily: '"IBM Plex Serif", serif', fontWeight: 700 }}
+              className="mt-4 break-words max-w-full text-foreground text-[clamp(2.2rem,4vw,2.5rem)] leading-[0.96]"
+              style={{ fontFamily: '"Poppins", sans-serif', fontWeight: 700 }}
             >
               {article.title}
             </h1>
@@ -2034,14 +2044,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             </div>
           </div>
           {saveError && <p role="alert" className="mt-2 text-right font-['Inter',sans-serif] text-xs text-red-600">{saveError}</p>}
-
-          {/* Hero image */}
-          <div className="mt-8 mb-8 overflow-hidden">
-            <img src={article.image} alt={article.title} className="w-full h-[400px] object-cover" />
-            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
-              Image: News South Africa / Associated Press
-            </p>
-          </div>
+          
 
           {/* Body */}
           <div className="prose-custom max-w-none">
@@ -2143,7 +2146,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                 <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
                   <ChevronLeft size={10} /> Previous
                 </div>
-                <p className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                <p className="font-['Poppins',sans-serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
                   {prevArticle.title}
                 </p>
               </button>
@@ -2157,7 +2160,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                 <div className="flex items-center justify-end gap-1 font-mono text-[9px] text-muted-foreground tracking-widest uppercase mb-2">
                   Next <ChevronRight size={10} />
                 </div>
-                <p className="font-['IBM_Plex_Serif',serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
+                <p className="font-['Poppins',sans-serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-2">
                   {nextArticle.title}
                 </p>
               </button>
@@ -2308,7 +2311,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   if (!loading && articles.length === 0) return (
     <>{seo}<main>
       <div className="border-b border-border py-10 max-w-7xl mx-auto px-4 lg:px-8">
-        <h1 className="font-['IBM_Plex_Serif',serif] font-black text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
+        <h1 className="font-['Poppins',sans-serif] font-bold text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
       </div>
       <EmptyState title="No articles in this category yet" message="Check back soon — content is published from WordPress." />
     </main></>
@@ -2325,7 +2328,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
             <div>
               <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Category</span>
               <h1
-                className="font-['IBM_Plex_Serif',serif] font-black text-5xl md:text-7xl leading-none mt-1"
+                className="font-['Poppins',sans-serif] font-bold text-5xl md:text-7xl leading-none mt-1"
                 style={{ color: meta.textColor }}
               >
                 {displayName}
@@ -2359,7 +2362,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                   </div>
                   <div className="p-6">
                     <CategoryBadge category={featured.category} small />
-                    <h2 className="font-['IBM_Plex_Serif',serif] font-black text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
+                    <h2 className="font-['Poppins',sans-serif] font-bold text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
                       {featured.title}
                     </h2>
                     <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">{featured.subtitle}</p>
@@ -2505,7 +2508,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                 </div>
                 <div className="flex-1 min-w-0">
                   <CategoryBadge category={article.category} small />
-                  <h3 className="font-['IBM_Plex_Serif',serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                  <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                     {article.title}
                   </h3>
                   <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2">

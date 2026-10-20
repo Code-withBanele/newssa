@@ -181,7 +181,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
       className="cursor-pointer group transform-gpu overflow-hidden border border-border transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-foreground/30 hover:shadow-lg active:scale-[0.99] motion-reduce:transition-none"
       onClick={onClick}
     >
-      <div className="relative overflow-hidden h-[400px] lg:h-[480px]">
+      <div className="relative aspect-[16/9] overflow-hidden">
         <img
           src={article.image}
           alt={article.title}
@@ -209,7 +209,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
 function ArticleCardMedium({ article, onClick }: { article: Article; onClick: () => void }) {
   return (
     <article className="cursor-pointer group transform-gpu border-b border-border pb-6 last:border-0 last:pb-0 transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-foreground/30 hover:shadow-md active:scale-[0.99] motion-reduce:transition-none" onClick={onClick}>
-      <div className="overflow-hidden mb-3 h-[200px]">
+      <div className="mb-3 aspect-[16/9] overflow-hidden">
         <img
           src={article.image}
           alt={article.title}
@@ -258,7 +258,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       className="cursor-pointer group transform-gpu flex gap-4 border-b border-border py-5 last:border-0 transition-[transform,background-color] duration-300 ease-out hover:-translate-y-0.5 hover:bg-secondary/20 active:scale-[0.99] motion-reduce:transition-none"
       onClick={onClick}
     >
-      <div className="shrink-0 w-32 h-24 overflow-hidden">
+      <div className="aspect-[4/3] w-32 shrink-0 overflow-hidden">
         <img
           src={article.image}
           alt={article.title}
@@ -1496,7 +1496,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] border border-border">
           {/* Main hero */}
           <div
-            className="relative cursor-pointer group overflow-hidden min-h-[480px]"
+            className="relative aspect-[16/9] cursor-pointer group overflow-hidden"
             onClick={() => navigate(articlePage(hero))}
           >
             <img src={hero.image} alt={hero.title} className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
@@ -1562,7 +1562,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
               onClick={() => navigate(articlePage(article))}
             >
-              <div className="overflow-hidden h-[280px]">
+              <div className="aspect-[16/9] overflow-hidden">
                 <img
                   src={article.image}
                   alt={article.title}
@@ -1600,7 +1600,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               className="cursor-pointer group shadow-sm transition-shadow duration-300 hover:shadow-md"
               onClick={() => navigate(articlePage(article))}
             >
-              <div className="overflow-hidden h-[180px] mb-3">
+              <div className="mb-3 aspect-[4/3] overflow-hidden">
                 <img
                   src={article.image}
                   alt={article.title}
@@ -1653,7 +1653,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 className="cursor-pointer group"
                 onClick={() => navigate(articlePage(politicsFeature))}
               >
-                <div className="overflow-hidden h-[200px] mb-3">
+                <div className="mb-3 aspect-[4/3] overflow-hidden">
                   <img
                     src={politicsFeature.image}
                     alt={politicsFeature.title}
@@ -1700,7 +1700,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 className="cursor-pointer group"
                 onClick={() => navigate(articlePage(secondary[17]))}
               >
-                <div className="overflow-hidden h-[200px] mb-3">
+                <div className="mb-3 aspect-[4/3] overflow-hidden">
                   <img
                     src={secondary[17].image}
                     alt={secondary[17].title}
@@ -1989,7 +1989,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
 
           {/* Hero image */}
           <div className="mt-8 mb-8 overflow-hidden">
-            <img src={article.image} alt={article.title} className="w-full h-[400px] object-cover" />
+            <img src={article.image} alt={article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
             <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
               Image: News South Africa / Associated Press
             </p>
@@ -2064,7 +2064,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                           <img
                             src={image.src}
                             alt={image.alt || article.title}
-                            className="aspect-[4/3] w-full object-cover transition-opacity hover:opacity-90"
+                            className="aspect-[4/3] w-full bg-muted/20 object-contain transition-opacity hover:opacity-90"
                           />
                         </button>
                         {image.caption && (
@@ -2086,7 +2086,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                       <img
                         src={block.image.src}
                         alt={block.image.alt || article.title}
-                        className="w-full h-auto max-h-[700px] object-cover"
+                        className="w-full h-auto max-h-[1000px] object-cover"
                       />
                     </button>
                     {block.image.caption && (
@@ -2355,7 +2355,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                   className="cursor-pointer group border border-border overflow-hidden"
                   onClick={() => navigate(articlePage(featured))}
                 >
-                  <div className="overflow-hidden h-[320px]">
+                  <div className="aspect-[16/9] overflow-hidden">
                     <img
                       src={featured.image}
                       alt={featured.title}

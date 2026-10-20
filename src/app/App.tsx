@@ -158,9 +158,10 @@ function highlightText(text: string, query: string): React.ReactNode {
 
 // --- Nav categories ---
 const NAV_CATEGORIES = [
-  "News", "Technology", "Politics", "Business",
+  "Home", "NEWS", "Technology", "Politics", "Business",
   "Sports", "Science", "Motoring", "Entertainment", "Opinion", "Profile",
 ];
+const ALL_CATEGORIES = NAV_CATEGORIES.filter(category => category !== "Profile");
 // --- Helpers ---
 function CategoryBadge({ category, small }: { category: string; small?: boolean }) {
   const meta = getCategoryMeta(category);
@@ -1198,7 +1199,7 @@ function Navbar({
                     <button
                       key={cat}
                       onClick={() => {
-                        if (cat === "News") return navigate({ type: "home" });
+                        if (cat === "Home") return navigate({ type: "home" });
                         return navigate({ type: "category", name: cat });
                       }}
                       className="relative shrink-0 px-2 xl:px-4 py-3.5 font-['IBM_Plex_Serif',serif] font-bold text-[10px] xl:text-[11px] tracking-[0.06em] xl:tracking-[0.08em] uppercase text-white/75 hover:bg-white/10 hover:text-white transition-all group"
@@ -2286,10 +2287,11 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   const featured = articles[0] ?? null;
   const grid = articles.slice(1);
   const sidebar = sidebarArticles;
-  const displayName = normalizeCategoryName(category?.name ?? name);
+  const isLatestNews = toCategorySlug(name) === "news";
+  const displayName = isLatestNews ? "NEWS" : normalizeCategoryName(category?.name ?? name);
   const meta = getCategoryMeta(displayName);
   const categorySlug = toCategorySlug(name);
-  const seo = <SeoHead title={`${displayName} News | NewsSA`} description={`The latest ${displayName} news and updates from News South Africa.`} path={`/category/${categorySlug}`} keywords={[`${displayName} news`, "NewsSA"]} breadcrumbs={[{ name: "Home", path: "/" }, { name: displayName, path: `/category/${categorySlug}` }]} />;
+  const seo = <SeoHead title={isLatestNews ? "Latest News | NewsSA" : `${displayName} News | NewsSA`} description={isLatestNews ? "The latest stories across all NewsSA categories." : `The latest ${displayName} news and updates from News South Africa.`} path={`/category/${categorySlug}`} keywords={[`${displayName} news`, "NewsSA"]} breadcrumbs={[{ name: "Home", path: "/" }, { name: displayName, path: `/category/${categorySlug}` }]} />;
 
   useEffect(() => { window.scrollTo(0, 0); setPage(1); }, [name]);
 

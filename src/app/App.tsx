@@ -125,7 +125,7 @@ function toCategorySlug(name: string): string {
 
 function getCategoryMeta(cat: string) {
   const normalized = normalizeCategoryName(cat);
-  return CATEGORY_META[normalized] || { color: "#ede9e3", textColor: "#6b6880" };
+  return { ...(CATEGORY_META[normalized] || { color: "#ede9e3", textColor: "#6b6880" }), textColor: "#b91c1c" };
 }
 
 // Content is now fetched from WordPress — see src/hooks/ and src/api/
@@ -167,8 +167,8 @@ function CategoryBadge({ category, small }: { category: string; small?: boolean 
   const meta = getCategoryMeta(category);
   return (
     <span
-      className={`inline-block font-mono tracking-widest uppercase ${small ? "text-[9px] px-1.5 py-0.5" : "text-[10px] px-2 py-1"}`}
-      style={{ backgroundColor: meta.color, color: meta.textColor }}
+      className={`inline-block font-['IBM_Plex_Serif',serif] font-semibold tracking-wide ${small ? "text-[10px]" : "text-xs"}`}
+      style={{ color: meta.textColor }}
     >
       {category}
     </span>
@@ -184,7 +184,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
       <div className="relative aspect-[16/9] overflow-hidden">
         <img
           src={article.image}
-          alt={article.title}
+          alt={article.imageAlt || article.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -212,7 +212,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
       <div className="mb-3 aspect-[16/9] overflow-hidden">
         <img
           src={article.image}
-          alt={article.title}
+          alt={article.imageAlt || article.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
@@ -230,7 +230,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
   );
 }
 
-function ArticleCardSmall({ article, onClick, index }: { article: Article; onClick: () => void; index?: number }) {
+function ArticleCardSmall({ article, onClick, index, showImage = false, compactOnMobile = false }: { article: Article; onClick: () => void; index?: number; showImage?: boolean; compactOnMobile?: boolean }) {
   return (
     <article
       className="cursor-pointer group transform-gpu flex gap-4 py-4 border-b border-border last:border-0 transition-[transform,background-color] duration-300 ease-out hover:-translate-y-0.5 hover:bg-secondary/20 active:scale-[0.99] motion-reduce:transition-none"
@@ -241,9 +241,14 @@ function ArticleCardSmall({ article, onClick, index }: { article: Article; onCli
           {String(index + 1).padStart(2, "0")}
         </span>
       )}
+      {showImage && (
+        <div className="aspect-[4/3] w-20 shrink-0 overflow-hidden">
+          <img src={article.image} alt={article.imageAlt || article.title} className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105" />
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         {index === undefined && <CategoryBadge category={article.category} small />}
-        <h4 className="font-['Poppins',sans-serif] font-bold text-foreground text-[clamp(1.2rem,1.5vw,2rem)] leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full">
+        <h4 className={`font-['Poppins',sans-serif] font-bold text-foreground ${compactOnMobile ? "text-sm sm:text-base md:text-[clamp(1.2rem,1.5vw,2rem)]" : "text-[clamp(1.2rem,1.5vw,2rem)]"} leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full`}>
           {article.title}
         </h4>
         <p className="font-mono text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
@@ -261,7 +266,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
       <div className="aspect-[4/3] w-32 shrink-0 overflow-hidden">
         <img
           src={article.image}
-          alt={article.title}
+          alt={article.imageAlt || article.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
@@ -289,7 +294,7 @@ function SectionHeader({ title, color, onViewAll }: { title: string; color?: str
       />
       <div className="flex items-center justify-between pb-3">
         <span
-          className="font-mono text-[11px] tracking-[0.18em] uppercase font-medium"
+          className="font-['IBM_Plex_Serif',serif] text-lg md:text-xl tracking-normal font-semibold"
           style={{ color: color || "#374151" }}
         >
           {title}
@@ -1446,26 +1451,40 @@ function NewsMediaAwardsAd() {
 }
 
 function HomePage({ navigate }: { navigate: (p: Page) => void }) {
-  const { featured: hero, secondary, loading, error } = useFeaturedPosts(24);
-  const heroSidebar = secondary.slice(0, 3);
-  const featuredTwo = secondary.slice(3, 5);
-  const latestGrid = secondary.slice(5, 9);
-  const latestList = secondary.slice(9, 13);
-  const politicsFeature = secondary[13] ?? null;
-  const trending = secondary.slice(0, 6);
-  const mostRead = secondary.slice(4, 10);
-  const businessSidebarCandidates = secondary.slice(18).filter(a =>
-    !a.title.startsWith("CHINA HOMELIFE SOUTH AFRICA 2026 DRAWS TO A CLOSE")
-  );
-  const businessSidebarLead = businessSidebarCandidates[0];
-  const businessSidebarArticles = businessSidebarLead
-    ? [
-        businessSidebarLead,
-        businessSidebarCandidates.find((a, index) =>
-          index > 0 && a.category !== businessSidebarLead.category
-        ),
-      ].filter((article): article is Article => article !== undefined)
-    : [];
+  const { featured: hero, secondary, loading, error } = useFeaturedPosts(40);
+  const homeArticles = Array.from(new Map(secondary.map(article => [article.id, article] as const)).values());
+  const heroSidebar = homeArticles.slice(0, 3);
+  const featuredTwo = homeArticles.slice(3, 5);
+  const latestGrid = homeArticles.slice(5, 9);
+  const latestList = homeArticles.slice(9, 13);
+  const politicsFeature = homeArticles[13] ?? null;
+  const politicsSecondFeature = homeArticles[14] ?? null;
+  const politicsSidebarArticles = homeArticles.slice(15, 18);
+  const businessFeature = homeArticles[18] ?? null;
+  const businessSecondFeature = homeArticles[19] ?? null;
+  const businessSidebarArticles = homeArticles.slice(20, 23);
+  const trending = homeArticles.slice(23, 31);
+  const mostRead = homeArticles.slice(31, 39);
+
+  useEffect(() => {
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-scroll-reveal]"));
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach(element => element.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.05, rootMargin: "0px 0px -32px 0px" });
+
+    elements.forEach(element => observer.observe(element));
+    return () => observer.disconnect();
+  }, [loading, homeArticles.length]);
+
   const seo = <SeoHead title="News South Africa | NewsSA" description="Independent news and events from South Africa, Africa and the world, published by News South Africa." path="/" keywords={["South Africa news", "Africa news", "NewsSA"]} />;
   // WordPress not connected
   if (!import.meta.env.VITE_WORDPRESS_API) return <>{seo}<NotConfiguredState /></>;
@@ -1492,32 +1511,27 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
   return (
     <main>
       {/* Hero section */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 pt-8 pb-4">
+      <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 pt-8 pb-4">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] border border-border">
           {/* Main hero */}
           <div
-            className="relative aspect-[16/9] cursor-pointer group overflow-hidden"
+            className="cursor-pointer group"
             onClick={() => navigate(articlePage(hero))}
           >
-            <img src={hero.image} alt={hero.title} className="w-full h-full object-cover absolute inset-0 transition-transform duration-700 group-hover:scale-105" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-transparent" />
-            <div className="absolute inset-0 flex flex-col items-center justify-end p-6 md:p-10 text-center">
-              <div className="w-full bg-gradient-to-t from-black/55 via-black/25 to-transparent px-3 pt-10 pb-2 md:px-5 md:pt-12">
-                <div className="bg-[rgba(30,58,138,0.08)] inline-block mb-3">
-                  <span className="font-mono text-[#1e3a8a] text-[10px] tracking-widest uppercase px-2 py-1">
-                    {hero.category}
-                  </span>
-                </div>
-                <h1 className="font-['Poppins',sans-serif] font-bold text-white text-[clamp(1.5rem,3vw,3rem)] leading-[1.05] max-w-[28ch] mx-auto break-words [text-shadow:0_2px_12px_rgba(0,0,0,0.85)]">
-                  {hero.title}
-                </h1>
-                <div className="flex flex-wrap justify-center items-center gap-x-4 gap-y-1 mt-4 font-mono text-[9px] text-white/75 tracking-widest uppercase">
-                  <span>{hero.author}</span>
-                  <span>·</span>
-                  <span>{hero.timeAgo}</span>
-                  <span>·</span>
-                  <span>{hero.readTime}</span>
-                </div>
+            <div className="relative aspect-[16/9] overflow-hidden">
+              <img src={hero.image} alt={hero.imageAlt || hero.title} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105" />
+            </div>
+            <div className="border-b border-border p-5 text-left md:p-8">
+              <CategoryBadge category={hero.category} small />
+              <h1 className="mt-2 max-w-[32ch] break-words font-['Poppins',sans-serif] text-[clamp(0.9rem,2.4vw,2.5rem)] font-bold leading-[1.08] text-foreground transition-colors group-hover:text-accent">
+                {hero.title}
+              </h1>
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[9px] uppercase tracking-widest text-muted-foreground">
+                <span>{hero.author}</span>
+                <span>&middot;</span>
+                <span>{hero.timeAgo}</span>
+                <span>&middot;</span>
+                <span>{hero.readTime}</span>
               </div>
             </div>
           </div>
@@ -1554,7 +1568,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
       <NewsMediaAwardsAd />
 
       {/* Two featured articles */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+      <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 py-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {featuredTwo.map((article) => (
             <div
@@ -1565,7 +1579,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <div className="aspect-[16/9] overflow-hidden">
                 <img
                   src={article.image}
-                  alt={article.title}
+                  alt={article.imageAlt || article.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
@@ -1588,7 +1602,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
       </section>
 
       {/* Latest News */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-6">
+      <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 py-6">
         <SectionHeader
           title="Latest News"
           onViewAll={() => navigate({ type: "category", name: "News" })}
@@ -1603,7 +1617,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <div className="mb-3 aspect-[4/3] overflow-hidden">
                 <img
                   src={article.image}
-                  alt={article.title}
+                  alt={article.imageAlt || article.title}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               </div>
@@ -1639,7 +1653,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
       </section>
 
       {/* Politics + Business sections */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-8">
+      <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Politics */}
           <div>
@@ -1648,7 +1662,8 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               color="#1e3a8a"
               onViewAll={() => navigate({ type: "category", name: "Politics" })}
             />
-            <div className="grid grid-cols-[1fr_180px] gap-6 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-6 items-start">
+              <div className="space-y-8">
               <div
                 className="cursor-pointer group"
                 onClick={() => navigate(articlePage(politicsFeature))}
@@ -1656,7 +1671,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <div className="mb-3 aspect-[4/3] overflow-hidden">
                   <img
                     src={politicsFeature.image}
-                    alt={politicsFeature.title}
+                    alt={politicsFeature.imageAlt || politicsFeature.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
@@ -1670,13 +1685,38 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   <span>{politicsFeature.timeAgo}</span>
                 </div>
               </div>
+              {politicsSecondFeature && (
+                <div
+                  className="cursor-pointer group"
+                  onClick={() => navigate(articlePage(politicsSecondFeature))}
+                >
+                  <div className="mb-3 aspect-[4/3] overflow-hidden">
+                    <img
+                      src={politicsSecondFeature.image}
+                      alt={politicsSecondFeature.imageAlt || politicsSecondFeature.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <CategoryBadge category={politicsSecondFeature.category} small />
+                  <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                    {politicsSecondFeature.title}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
+                    <span>{politicsSecondFeature.author}</span>
+                    <span>Â·</span>
+                    <span>{politicsSecondFeature.timeAgo}</span>
+                  </div>
+                </div>
+              )}
+              </div>
               <div className="flex flex-col gap-1">
-                {secondary.slice(14, 17).filter(a => !a.title.toLowerCase().includes("history brought us to a crossroads")).map(a => (
+                {politicsSidebarArticles.map(a => (
                   <button
                     key={a.id}
                     onClick={() => navigate(articlePage(a))}
                     className="text-left border-b border-border pb-4 mb-1 hover:text-accent transition-colors"
                   >
+                    <img src={a.image} alt={a.imageAlt || a.title} className="mb-2 aspect-[16/9] w-full object-cover" />
                     <CategoryBadge category={a.category} small />
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
@@ -1694,30 +1734,55 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               color="#065f46"
               onViewAll={() => navigate({ type: "category", name: "Business" })}
             />
-            <div className="grid grid-cols-[1fr_180px] gap-6 items-start">
-              {secondary[17] && (
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_180px] gap-6 items-start">
+              <div className="space-y-8">
+              {businessFeature && (
               <div
                 className="cursor-pointer group"
-                onClick={() => navigate(articlePage(secondary[17]))}
+                onClick={() => navigate(articlePage(businessFeature))}
               >
                 <div className="mb-3 aspect-[4/3] overflow-hidden">
                   <img
-                    src={secondary[17].image}
-                    alt={secondary[17].title}
+                    src={businessFeature.image}
+                    alt={businessFeature.imageAlt || businessFeature.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>
-                <CategoryBadge category={secondary[17].category} small />
+                <CategoryBadge category={businessFeature.category} small />
                 <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
-                  {secondary[17].title}
+                  {businessFeature.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
-                  <span>{secondary[17].author}</span>
+                  <span>{businessFeature.author}</span>
                   <span>·</span>
-                  <span>{secondary[17].timeAgo}</span>
+                  <span>{businessFeature.timeAgo}</span>
                 </div>
               </div>
               )}
+              {businessSecondFeature && (
+                <div
+                  className="cursor-pointer group"
+                  onClick={() => navigate(articlePage(businessSecondFeature))}
+                >
+                  <div className="mb-3 aspect-[4/3] overflow-hidden">
+                    <img
+                      src={businessSecondFeature.image}
+                      alt={businessSecondFeature.imageAlt || businessSecondFeature.title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                  </div>
+                  <CategoryBadge category={businessSecondFeature.category} small />
+                  <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
+                    {businessSecondFeature.title}
+                  </h3>
+                  <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
+                    <span>{businessSecondFeature.author}</span>
+                    <span>Â·</span>
+                    <span>{businessSecondFeature.timeAgo}</span>
+                  </div>
+                </div>
+              )}
+              </div>
               <div className="flex flex-col gap-1">
                 {businessSidebarArticles.map(a => (
                   <button
@@ -1725,6 +1790,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     onClick={() => navigate(articlePage(a))}
                     className="text-left border-b border-border pb-4 mb-1"
                   >
+                    <img src={a.image} alt={a.imageAlt || a.title} className="mb-2 aspect-[16/9] w-full object-cover" />
                     <CategoryBadge category={a.category} small />
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
@@ -1739,17 +1805,19 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
       </section>
 
       {/* Trending + Most Read */}
-      <section className="max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-border">
+      <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 py-8 border-t border-border">
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
           <div>
             <SectionHeader title="Trending Stories" color="#ea580c" />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12">
-              {trending.slice(0, 6).map((a, i) => (
+            <div className="grid grid-cols-1">
+              {trending.map((a, i) => (
                 <ArticleCardSmall
                   key={a.id}
                   article={a}
                   onClick={() => navigate(articlePage(a))}
                   index={i}
+                  showImage
+                  compactOnMobile
                 />
               ))}
             </div>
@@ -1979,7 +2047,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             <span className="text-border font-mono text-xs">/</span>
             <button
               onClick={() => navigate({ type: "category", name: article.category })}
-              className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground hover:text-foreground transition-colors"
+              className="font-['IBM_Plex_Serif',serif] text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               {article.category}
             </button>
@@ -1989,7 +2057,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
 
           {/* Hero image */}
           <div className="mt-8 mb-8 overflow-hidden">
-            <img src={article.image} alt={article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
+            <img src={article.image} alt={article.imageAlt || article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
             <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
               Image: News South Africa / Associated Press
             </p>
@@ -2015,7 +2083,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
           </div>
 
           {/* Meta */}
-          <div className="flex flex-wrap items-center gap-4 py-5 border-y border-border mt-5">
+          <div className="flex flex-wrap items-center gap-4 py-5 border-y border-border mt-8 mb-8">
             <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground">
               <Clock size={10} />
               <span>{article.date}</span>
@@ -2313,7 +2381,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
   if (!loading && articles.length === 0) return (
     <>{seo}<main>
       <div className="border-b border-border py-10 max-w-7xl mx-auto px-4 lg:px-8">
-        <h1 className="font-['Poppins',sans-serif] font-bold text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
+        <h1 className="font-['IBM_Plex_Serif',serif] font-bold text-5xl md:text-7xl" style={{ color: meta.textColor }}>{displayName}</h1>
       </div>
       <EmptyState title="No articles in this category yet" message="Check back soon — content is published from WordPress." />
     </main></>
@@ -2330,7 +2398,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
             <div>
               <span className="font-mono text-[9px] tracking-[0.2em] uppercase text-muted-foreground">Category</span>
               <h1
-                className="font-['Poppins',sans-serif] font-bold text-5xl md:text-7xl leading-none mt-1"
+                className="font-['IBM_Plex_Serif',serif] font-bold text-5xl md:text-7xl leading-none mt-1"
                 style={{ color: meta.textColor }}
               >
                 {displayName}
@@ -2358,7 +2426,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                   <div className="aspect-[16/9] overflow-hidden">
                     <img
                       src={featured.image}
-                      alt={featured.title}
+                      alt={featured.imageAlt || featured.title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                   </div>
@@ -2504,7 +2572,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                 <div className="shrink-0 w-32 h-24 overflow-hidden hidden md:block">
                   <img
                     src={article.image}
-                    alt={article.title}
+                    alt={article.imageAlt || article.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>

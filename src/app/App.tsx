@@ -2053,17 +2053,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             </button>
           </div>
 
-   
-
-          {/* Hero image */}
-          <div className="mt-8 mb-8 overflow-hidden">
-            <img src={article.image} alt={article.imageAlt || article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
-            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
-              Image: News South Africa / Associated Press
-            </p>
-          </div>
-
-                 {/* Category + centered headline + author */}
+                  {/* Category + centered headline + author */}
           <div className="text-center">
             <CategoryBadge category={article.category} />
             <h1
@@ -2081,6 +2071,16 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
               </p>
             )}
           </div>
+
+          {/* Hero image */}
+          <div className="mt-8 mb-8 overflow-hidden">
+            <img src={article.image} alt={article.imageAlt || article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
+            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
+              Image: News South Africa / Associated Press
+            </p>
+          </div>
+
+         
 
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-4 py-5 border-y border-border mt-8 mb-8">

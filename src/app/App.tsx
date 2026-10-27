@@ -1966,6 +1966,8 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
       .filter(block => block.type !== "paragraph" || !isAuthorByline(block.text ?? ""))
     : [];
   const articleDisplayBlocks = groupAdjacentArticleImages(articleBodyBlocks);
+  const leadingArticleImageIndex = articleDisplayBlocks.findIndex(block => block.type === "image");
+  const leadingArticleImage = articleDisplayBlocks[leadingArticleImageIndex];
   const seo = <SeoHead
     title={article ? `${article.title} | NewsSA` : "Article | NewsSA"}
     description={article?.subtitle || "Read the latest independent news from News South Africa."}
@@ -2043,6 +2045,28 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             </button>
           </div>
 
+          {leadingArticleImage?.type === "image" && leadingArticleImage.image && (
+            <figure className="mb-8 overflow-hidden rounded-md border border-border bg-muted/20">
+              <button
+                type="button"
+                className="block w-full cursor-zoom-in"
+                onClick={() => leadingArticleImage.image && setImageViewer({ images: [leadingArticleImage.image], index: 0 })}
+                aria-label="View image full screen"
+              >
+                <img
+                  src={leadingArticleImage.image.src}
+                  alt={leadingArticleImage.image.alt || article.title}
+                  className="w-full h-auto max-h-[1000px] object-cover"
+                />
+              </button>
+              {leadingArticleImage.image.caption && (
+                <figcaption className="px-4 py-3 font-mono text-[9px] tracking-[0.18em] uppercase text-muted-foreground">
+                  {leadingArticleImage.image.caption}
+                </figcaption>
+              )}
+            </figure>
+          )}
+
                   {/* Category + centered headline + author */}
           <div className="text-center">
             <CategoryBadge category={article.category} />
@@ -2108,6 +2132,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
           {/* Body */}
           <div className="prose-custom max-w-none">
             {articleDisplayBlocks.map((block, i) => (
+              i === leadingArticleImageIndex ? null : (
               <div key={i}>
                 {block.type === "gallery" ? (
                   <div className={`my-8 grid w-full gap-3 sm:gap-4 ${block.images.length === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
@@ -2171,6 +2196,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                   </>
                 )}
               </div>
+              )
             ))}
           </div>
 

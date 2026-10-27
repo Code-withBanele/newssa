@@ -41,7 +41,6 @@ import selloImg from "@/imports/Body/e4d6a2e1442cc46c9c05f6851f3a775028e65458.pn
 import sowetaImg from "@/imports/Body/cac906114b2abd100defababcde8e853ee603ace.png";
 import homePage1Img from "@/imports/Body/ccb9a0a56ff2339b740b103f0edfb47b2de0cdf9.png";
 import nwMediaAwardsAd from "@/imports/Body/1.png";
-import bookLaunchAd from "@/imports/Body/2.png";
 const logoImg = "/newssa-logo.png";
 
 // --- Types ---
@@ -155,6 +154,7 @@ function highlightText(text: string, query: string): React.ReactNode {
     </>
   );
 }
+
 
 // --- Nav categories ---
 const NAV_CATEGORIES = [
@@ -1639,16 +1639,6 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               onClick={() => navigate(articlePage(article))}
             />
           ))}
-        </div>
-        <div className="mt-8">
-          <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
-            Advertisement
-          </p>
-          <img
-            src={bookLaunchAd}
-            alt="Book launch for Isaiah Bud-M'belle: The Life of Isaiah Budlwana M'belle, 1870–1947, at The Ark @1349"
-            className="block h-auto w-full"
-          />
         </div>
       </section>
 

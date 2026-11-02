@@ -1427,28 +1427,28 @@ function ScrollToTop() {
 // ============================================================
 // HOME PAGE
 // ============================================================
-function NewsMediaAwardsAd() {
-  return (
-    <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
-      <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
-        Advertisement
-      </p>
-      <a
-        href="https://www.nwmediaawards.co.za"
-        target="_blank"
-        rel="noopener noreferrer"
-        aria-label="Visit the North West Media Awards website"
-        className="block overflow-hidden"
-      >
-        <img
-          src={nwMediaAwardsAd}
-          alt="Vote for News South Africa as Online Media House of the Year at the North West Media Awards 2026"
-          className="block h-auto w-full"
-        />
-      </a>
-    </div>
-  );
-}
+//function NewsMediaAwardsAd() {
+ // return (
+   // <div className="max-w-7xl mx-auto px-4 lg:px-8 py-4">
+     // <p className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground mb-2">
+      //  Advertisement
+      //</p>
+     // <a
+       // href="https://www.nwmediaawards.co.za"
+       // target="_blank"
+        //rel="noopener noreferrer"
+        //aria-label="Visit the North West Media Awards website"
+      //  className="block overflow-hidden"
+      //>
+        //<img
+         // src={nwMediaAwardsAd}
+          //alt="Vote for News South Africa as Online Media House of the Year at the North West Media Awards 2026"
+          //className="block h-auto w-full"
+        ///>
+      //</a>
+  //  </div>
+ // );
+//}
 
 function HomePage({ navigate }: { navigate: (p: Page) => void }) {
   const { featured: hero, secondary, loading, error } = useFeaturedPosts(40);
@@ -1565,7 +1565,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
         </div>
       </section>
 
-      <NewsMediaAwardsAd />
+  
 
       {/* Two featured articles */}
       <section data-scroll-reveal className="scroll-reveal max-w-7xl mx-auto px-4 lg:px-8 py-4">
@@ -2286,7 +2286,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
 
         </aside>
       </div>
-      <NewsMediaAwardsAd />
+    
     </main>
     {imageViewer && imageViewer.images[imageViewer.index] && (
       <div

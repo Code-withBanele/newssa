@@ -2540,10 +2540,11 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
 // ============================================================
 function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) => void }) {
   const [searchInput, setSearchInput] = useState(query);
-  const { results, loading: searchLoading, total } = useSearch(query);
+  const [page, setPage] = useState(1);
+  const { results, loading: searchLoading, total, totalPages } = useSearch(query, undefined, page);
   const { articles: trendingSidebar } = usePosts({ per_page: 5, orderby: "date" }, []);
 
-  useEffect(() => { window.scrollTo(0, 0); setSearchInput(query); }, [query]);
+  useEffect(() => { window.scrollTo(0, 0); setSearchInput(query); setPage(1); }, [query]);
 
   const seo = <SeoHead title={`Search: ${query} | NewsSA`} description={`Search NewsSA for articles about ${query}.`} path="/" robots="noindex, follow" />;
 
@@ -2643,6 +2644,29 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
               />
             ))}
           </aside>
+          {totalPages > 1 && (
+            <nav aria-label="Search result pages" className="mt-8 flex items-center justify-center gap-4 lg:col-span-2">
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.max(1, current - 1))}
+                disabled={page <= 1 || searchLoading}
+                className="border border-border px-4 py-2 font-mono text-[9px] tracking-widest uppercase disabled:opacity-40 hover:bg-secondary transition-colors"
+              >
+                Previous
+              </button>
+              <span className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.min(totalPages, current + 1))}
+                disabled={page >= totalPages || searchLoading}
+                className="border border-border px-4 py-2 font-mono text-[9px] tracking-widest uppercase disabled:opacity-40 hover:bg-secondary transition-colors"
+              >
+                Next
+              </button>
+            </nav>
+          )}
         </div>
       )}
     </main>

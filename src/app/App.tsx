@@ -220,7 +220,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
       <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
         {article.title}
       </h3>
-      <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
+      <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2"><span dangerouslySetInnerHTML={{ __html: article.subtitleHtml || article.subtitle }} /></p>
       <div className="flex items-center gap-2 mt-3 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-widest uppercase">
         <span>{article.author}</span>
         <span>·</span>
@@ -1371,7 +1371,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
             {[
              { icon: Twitter, label: "Twitter" , href : "https://x.com/NewsSA_Online" },
               { icon: Facebook, label: "Facebook", href : "https://www.facebook.com/profile.php?id=61573945540538" },
-              { icon: Instagram, label: "Instagram", href : "https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.instagram.com%2Fnewssa_online%3Ffbclid%3DIwcGRvZgVleHRuA2FlbQIxMABicmlkETF5RlJVWVI0aDZJYk9hd0ljc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuaOKm4LqthAZ3vzbcWvAi-b7bSluhrl7YRPFee2ma089SBoYbxih9RnlWsd_aem_Jix1SZK2WJ2pnykkobgrTg&h=AUBMo79nfKvj8RLL7qyVFE9D-bangfr5DK1IC9W5UIUWCCoCCNgU-r7k_TxuCw193ToHGQ97VTBu75G8QfqJ-I79Cc2R-L4hI-8UPL7eH3EmP5U_AnrQCfCpktC4Hrjq5nEA" },
+              { icon: Instagram, label: "Instagram", href : "https://www.instagram.com/newssa_online/" },
               
             
             ].map(({ icon: Icon, label, href }) => (
@@ -2077,21 +2077,34 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
               {article.title}
             </h1>
             {article.authorAvailable && (
-              <p
-                className="mt-4 text-sm uppercase tracking-[0.18em] text-foreground/75"
-                style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-              >
-                {article.author}
-              </p>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                {article.authorAvatar && (
+                  <img
+                    src={article.authorAvatar}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                )}
+                <p
+                  className="text-base font-semibold uppercase tracking-[0.12em] text-foreground/85"
+                  style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+                >
+                  {article.author}
+                </p>
+              </div>
             )}
           </div>
 
           {/* Hero image */}
           <div className="mt-8 mb-8 overflow-hidden">
             <img src={article.image} alt={article.imageAlt || article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
-            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
-              Image: News South Africa / Associated Press
-            </p>
+            {article.images[0]?.caption && (
+              <figcaption className="mt-2 text-center font-mono text-[10px] tracking-wide text-muted-foreground/70">
+                {article.images[0].caption}
+              </figcaption>
+            )}
           </div>
 
          
@@ -2190,9 +2203,8 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                     <p
                       className="font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full"
                       style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-                    >
-                      {block.type === "paragraph" ? block.text : ""}
-                    </p>
+                      dangerouslySetInnerHTML={{ __html: block.type === "paragraph" ? (block.html ?? block.text ?? "") : "" }}
+                    />
                   </>
                 )}
               </div>
@@ -2451,7 +2463,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                     <h2 className="font-['Poppins',sans-serif] font-bold text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
                       {featured.title}
                     </h2>
-                    <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">{featured.subtitle}</p>
+                    <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2"><span dangerouslySetInnerHTML={{ __html: featured.subtitleHtml || featured.subtitle }} /></p>
                     <div className="flex items-center gap-3 mt-4 font-mono text-[9px] text-muted-foreground">
                       <span>{featured.author}</span>
                       <span>·</span>

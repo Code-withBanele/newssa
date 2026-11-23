@@ -35,7 +35,7 @@ const post = {
   categories: [3],
   tags: [],
   _embedded: {
-    author: [{ name: "Jane Reporter" }],
+    author: [{ name: "Jane Reporter", avatar_urls: { "96": "https://example.com/jane-96.jpg" } }],
     "wp:featuredmedia": [{
       source_url: "https://example.com/cover.jpg",
       alt_text: "Cover image alt",
@@ -61,6 +61,8 @@ assert.equal(article.images[1].alt, "Inline image one");
 assert.equal(article.images[1].caption, "Inline caption one");
 assert.equal(article.images[2].alt, "Inline image two");
 assert.equal(article.author, "Jane Reporter");
+assert.equal(article.authorAvatar, "https://example.com/jane-96.jpg");
+assert.equal(article.subtitleHtml, "Short introduction");
 assert.deepEqual(article.content.map(block => block.type), [
   "paragraph", "image", "paragraph", "image", "paragraph",
 ]);
@@ -241,3 +243,22 @@ assert.deepEqual(sizeVariantFeaturedArticle.images.map(item => item.src), [
 ]);
 assert.deepEqual(sizeVariantFeaturedArticle.content.map(item => item.type), ["paragraph"]);
 assert.equal(sizeVariantFeaturedArticle.content[0].text, "Body paragraph after the resized cover image.");
+
+const formattedPost = {
+  ...post,
+  excerpt: { rendered: "<p>A <em>carefully</em> <strong>formatted</strong> introduction.</p>" },
+  content: {
+    rendered: '<p>Keep <em>italics</em> and <a href="https://example.com/story">safe links</a>, but <script>alert(1)</script> must not render.</p>',
+  },
+};
+const formattedArticle = transformPost(formattedPost as any);
+assert.equal(
+  formattedArticle.subtitleHtml,
+  "A <em>carefully</em> <strong>formatted</strong> introduction.",
+);
+assert.equal(
+  formattedArticle.content[0].html,
+  'Keep <em>italics</em> and <a href="https://example.com/story" target="_blank" rel="noopener noreferrer">safe links</a>, but  must not render.',
+);
+assert.doesNotMatch(formattedArticle.content[0].html ?? "", /<script|onerror|javascript:/i);
+

@@ -45,20 +45,20 @@ export interface Article {
 
 function sanitizeInlineHtml(html: string): string {
   const withoutUnsafeBlocks = html
-    .replace(/<!--[\\s\\S]*?-->/g, "")
-    .replace(/<(script|style|iframe|object|embed)\\b[\\s\\S]*?<\\/\\1\\s*>/gi, "");
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(script|style|iframe|object|embed)\b[\s\S]*?<\/\1\s*>/gi, "");
 
   const allowedTags = new Set(["em", "i", "strong", "b", "u", "s", "del", "sub", "sup", "br", "a"]);
-  return withoutUnsafeBlocks.replace(/<\\/?([a-z][a-z0-9-]*)\\b([^>]*)>/gi, (tag, rawName: string, attributes: string) => {
+  return withoutUnsafeBlocks.replace(/<\/?([a-z][a-z0-9-]*)\b([^>]*)>/gi, (tag, rawName: string, attributes: string) => {
     const name = rawName.toLowerCase();
     if (!allowedTags.has(name)) return "";
     if (tag.startsWith("</")) return name === "br" ? "" : `</${name}>`;
     if (name === "br") return "<br>";
     if (name !== "a") return `<${name}>`;
 
-    const hrefMatch = attributes.match(/\\bhref\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+    const hrefMatch = attributes.match(/\bhref\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/i);
     const href = (hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3] ?? "").trim().replace(/&amp;/gi, "&");
-    if (!/^(https?:\\/\\/|mailto:)/i.test(href)) return "<a>";
+    if (!/^(https?:\/\/|mailto:)/i.test(href)) return "<a>";
     const safeHref = href.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
     return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">`;
   });

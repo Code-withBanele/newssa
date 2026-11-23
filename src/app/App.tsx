@@ -1375,9 +1375,16 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
               
             
             ].map(({ icon: Icon, label, href }) => (
-              <button key={label} aria-label={label} className="text-white/40 hover:text-white transition-colors" onClick={() => window.open(href, "_blank")}     >
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="text-white/40 hover:text-white transition-colors"
+              >
                 <Icon size={25} />
-              </button>
+              </a>
             ))}
           </div>
           <div className="flex flex-col items-start gap-3 mb-2">

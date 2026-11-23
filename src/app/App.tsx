@@ -1588,9 +1588,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <h2 className="font-['Poppins',sans-serif] font-bold text-foreground text-xl leading-snug mt-2 group-hover:text-accent transition-colors">
                   {article.title}
                 </h2>
-                <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2">
-                  {article.subtitle}
-                </p>
+                <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: article.subtitleHtml || article.subtitle }} />
                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-border font-['Poppins',sans-serif] font-bold">
                   <span className="text-[9px] text-muted-foreground">{article.author}</span>
                   <span className="text-[9px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
@@ -2609,9 +2607,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                   <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                     {article.title}
                   </h3>
-                  <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2">
-                    {article.subtitle}
-                  </p>
+                  <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: article.subtitleHtml || article.subtitle }} />
                   <div className="flex items-center gap-3 mt-3 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
                     <span>{article.author}</span>
                     <span>·</span>

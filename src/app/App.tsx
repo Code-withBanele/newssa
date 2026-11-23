@@ -1369,7 +1369,7 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
           <p className="font-mono text-[20px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
           <div className="flex gap-4 mb-6">
             {[
-             { icon: Twitter, label: "Twitter" , href : "https://x.com/NewsSA_Online" },
+             { icon: Twitter, label: "X", href: "https://x.com/NewsSA_Online" },
               { icon: Facebook, label: "Facebook", href : "https://www.facebook.com/profile.php?id=61573945540538" },
               { icon: Instagram, label: "Instagram", href : "https://www.instagram.com/newssa_online/" },
               

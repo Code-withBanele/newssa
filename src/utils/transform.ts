@@ -11,6 +11,8 @@ export interface ArticleImage {
 export interface ArticleContentBlock {
   type: "paragraph" | "image";
   text?: string;
+  /** Sanitised inline markup for preserving editorial emphasis and links. */
+  html?: string;
   image?: ArticleImage;
 }
 
@@ -19,10 +21,12 @@ export interface Article {
   id: number;
   slug: string;
   title: string;
-  subtitle: string;  // WP excerpt, stripped of HTML
+  subtitle: string;  // Plain-text WP excerpt for search and metadata
+  subtitleHtml: string; // Sanitised excerpt markup for display
   category: string;
   author: string;
   authorAvailable: boolean;
+  authorAvatar?: string;
   date: string;       // Formatted display date
   publishedAt: string;
   modifiedAt: string;
@@ -38,6 +42,27 @@ export interface Article {
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+
+function sanitizeInlineHtml(html: string): string {
+  const withoutUnsafeBlocks = html
+    .replace(/<!--[\\s\\S]*?-->/g, "")
+    .replace(/<(script|style|iframe|object|embed)\\b[\\s\\S]*?<\\/\\1\\s*>/gi, "");
+
+  const allowedTags = new Set(["em", "i", "strong", "b", "u", "s", "del", "sub", "sup", "br", "a"]);
+  return withoutUnsafeBlocks.replace(/<\\/?([a-z][a-z0-9-]*)\\b([^>]*)>/gi, (tag, rawName: string, attributes: string) => {
+    const name = rawName.toLowerCase();
+    if (!allowedTags.has(name)) return "";
+    if (tag.startsWith("</")) return name === "br" ? "" : `</${name}>`;
+    if (name === "br") return "<br>";
+    if (name !== "a") return `<${name}>`;
+
+    const hrefMatch = attributes.match(/\\bhref\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))/i);
+    const href = (hrefMatch?.[1] ?? hrefMatch?.[2] ?? hrefMatch?.[3] ?? "").trim().replace(/&amp;/gi, "&");
+    if (!/^(https?:\\/\\/|mailto:)/i.test(href)) return "<a>";
+    const safeHref = href.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+    return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer">`;
+  });
+}
 
 function stripHtml(html: string): string {
   let rawText = html
@@ -219,7 +244,8 @@ function appendParagraphBlocks(blocks: ArticleContentBlock[], html: string): voi
   const paragraphMatches = [...html.matchAll(/<p\b[^>]*>[\s\S]*?<\/p>/gi)];
   if (paragraphMatches.length === 0) {
     const text = stripHtml(html);
-    if (text) blocks.push({ type: "paragraph", text });
+    const safeHtml = sanitizeInlineHtml(html);
+    if (text) blocks.push({ type: "paragraph", text, html: safeHtml });
     return;
   }
 
@@ -230,12 +256,15 @@ function appendParagraphBlocks(blocks: ArticleContentBlock[], html: string): voi
     if (precedingText) blocks.push({ type: "paragraph", text: precedingText });
 
     const text = stripHtml(match[0]);
-    if (text) blocks.push({ type: "paragraph", text });
+    const innerHtml = match[0].replace(/^<p\\b[^>]*>/i, "").replace(/<\\/p>$/i, "");
+    const safeHtml = sanitizeInlineHtml(innerHtml);
+    if (text) blocks.push({ type: "paragraph", text, html: safeHtml });
     lastIndex = index + match[0].length;
   }
 
-  const trailingText = stripHtml(html.slice(lastIndex));
-  if (trailingText) blocks.push({ type: "paragraph", text: trailingText });
+  const trailingHtml = html.slice(lastIndex);
+  const trailingText = stripHtml(trailingHtml);
+  if (trailingText) blocks.push({ type: "paragraph", text: trailingText, html: sanitizeInlineHtml(trailingHtml) });
 }
 
 function buildContentBlocks(html: string, images: ArticleImage[]): ArticleContentBlock[] {
@@ -322,7 +351,7 @@ function getFeaturedImageAlt(post: WPPost): string {
   return media?.alt_text ?? stripHtml(post.title.rendered);
 }
 
-function getAuthorName(post: WPPost): { name: string; available: boolean } {
+function getAuthorName(post: WPPost): { name: string; available: boolean; avatar?: string } {
   const author = post._embedded?.author?.[0] as WPUser | undefined;
   const contentText = stripHtml(post.content?.rendered ?? "");
   const match = contentText.match(/BY\s+([^:]+):/i);
@@ -330,7 +359,8 @@ function getAuthorName(post: WPPost): { name: string; available: boolean } {
   const embeddedName = safeText(author?.name);
   const isPublicationName = /^(?:news\s*south\s*africa|newssa)$/i.test(embeddedName);
   const name = byline || (isPublicationName ? "" : embeddedName);
-  return { name, available: Boolean(name) };
+  const avatar = author?.avatar_urls?.["96"] ?? author?.avatar_urls?.["48"] ?? author?.avatar_urls?.["24"];
+  return { name, available: Boolean(name), avatar };
 }
 
 function getPrimaryCategory(post: WPPost): string {
@@ -365,9 +395,11 @@ export function transformPost(post: WPPost): Article {
     slug: post.slug,
     title: stripHtml(post.title.rendered),
     subtitle: stripHtml(post.excerpt.rendered),
+    subtitleHtml: sanitizeInlineHtml(post.excerpt.rendered),
     category: getPrimaryCategory(post),
     author: author.name,
     authorAvailable: author.available,
+    authorAvatar: author.avatar,
     date: formatDate(post.date),
     publishedAt: post.date,
     modifiedAt: post.modified,

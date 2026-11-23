@@ -256,7 +256,7 @@ function appendParagraphBlocks(blocks: ArticleContentBlock[], html: string): voi
     if (precedingText) blocks.push({ type: "paragraph", text: precedingText });
 
     const text = stripHtml(match[0]);
-    const innerHtml = match[0].replace(/^<p\\b[^>]*>/i, "").replace(/<\\/p>$/i, "");
+    const innerHtml = match[0].replace(/^<p\b[^>]*>/i, "").replace(/<\/p>$/i, "");
     const safeHtml = sanitizeInlineHtml(innerHtml);
     if (text) blocks.push({ type: "paragraph", text, html: safeHtml });
     lastIndex = index + match[0].length;

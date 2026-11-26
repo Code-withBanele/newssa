@@ -213,7 +213,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
           <h2 className="font-['Poppins',sans-serif] font-bold text-white text-[30px] leading-tight mt-3 max-w-2xl">
             {article.title}
           </h2>
-          <div className="flex items-center gap-4 mt-4 text-white/60 font-['Poppins',sans-serif] font-bold text-[9px] tracking-widest uppercase">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-4 text-white/60 font-['Poppins',sans-serif] font-bold article-meta tracking-widest uppercase">
             <span>{formatAuthorByline(article.author)}</span>
             <span>·</span>
             <span>{article.timeAgo}</span>
@@ -243,7 +243,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">
         {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
       </p>
-      <div className="flex items-center gap-2 mt-3 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-widest uppercase">
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-3 text-foreground/65 font-['Poppins',sans-serif] font-bold article-meta tracking-widest uppercase">
         <span>{formatAuthorByline(article.author)}</span>
         <span>·</span>
         <span>{article.timeAgo}</span>
@@ -273,7 +273,7 @@ function ArticleCardSmall({ article, onClick, index, showImage = false, compactO
         <h4 className={`font-['Poppins',sans-serif] font-bold text-foreground ${compactOnMobile ? "text-sm sm:text-base md:text-[clamp(1.2rem,1.5vw,2rem)]" : "text-[clamp(1.2rem,1.5vw,2rem)]"} leading-[1.12] mt-1 group-hover:text-accent transition-colors line-clamp-3 break-words max-w-full`}>
           {article.title}
         </h4>
-        <p className="font-['Poppins',sans-serif] font-bold text-muted-foreground text-[9px] tracking-wider mt-1">{article.timeAgo}</p>
+        <p className="font-['Poppins',sans-serif] font-bold text-muted-foreground article-meta-compact tracking-wider mt-1">{article.timeAgo}</p>
       </div>
     </article>
   );
@@ -297,7 +297,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
         <h4 className="font-['Poppins',sans-serif] font-bold text-foreground text-[14px] leading-[1.3] mt-1.5 group-hover:text-accent transition-colors line-clamp-2 break-words max-w-full">
           {article.title}
         </h4>
-        <div className="flex items-center gap-2 mt-2 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-wider uppercase">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 text-foreground/65 font-['Poppins',sans-serif] font-bold article-meta-compact tracking-wider uppercase">
           <span>{formatAuthorByline(article.author)}</span>
           <span>·</span>
           <span>{article.readTime}</span>
@@ -348,9 +348,9 @@ function SearchResultCard({ article, query, onClick }: {
         <img src={article.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
       </div>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-1">
           <CategoryBadge category={article.category} small />
-          <span className="font-['Poppins',sans-serif] font-bold text-[8px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
+          <span className="min-w-0 font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
         </div>
         <h4 className="font-['Poppins',sans-serif] font-bold text-[clamp(1.2rem,1.6vw,2rem)] text-foreground leading-[1.12] line-clamp-2 group-hover:text-accent transition-colors break-words max-w-full">
           {highlightText(article.title, query)}
@@ -358,7 +358,7 @@ function SearchResultCard({ article, query, onClick }: {
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
           {highlightText(article.subtitle, query)}
         </p>
-        <p className="font-['Poppins',sans-serif] font-bold text-[8px] text-muted-foreground mt-1">{formatAuthorByline(article.author)}</p>
+        <p className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground mt-1">{formatAuthorByline(article.author)}</p>
       </div>
     </button>
   );
@@ -502,7 +502,7 @@ function SearchOverlay({ isOpen, onClose, navigate }: {
                     <span className="font-['Poppins',sans-serif] font-bold text-sm text-foreground group-hover:text-accent transition-colors line-clamp-1 flex-1">
                       {a.title}
                     </span>
-                    <span className="font-['Poppins',sans-serif] font-bold text-[8px] text-muted-foreground shrink-0">{a.timeAgo}</span>
+                    <span className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground text-right">{a.timeAgo}</span>
                   </button>
                 ))}
               </div>
@@ -1542,7 +1542,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <h1 className="mt-2 max-w-[32ch] break-words font-['Poppins',sans-serif] text-[clamp(0.9rem,2.4vw,2.5rem)] font-bold leading-[1.08] text-foreground transition-colors group-hover:text-accent">
                 {hero.title}
               </h1>
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-['Poppins',sans-serif] font-bold text-[9px] uppercase tracking-widest text-muted-foreground">
+              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-['Poppins',sans-serif] font-bold article-meta uppercase tracking-widest text-muted-foreground">
                 <span>{formatAuthorByline(hero.author)}</span>
                 <span>&middot;</span>
                 <span>{hero.timeAgo}</span>
@@ -1572,7 +1572,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug group-hover:text-accent transition-colors">
                       {a.title}
                     </p>
-                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{a.timeAgo}</p>
+                    <p className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground mt-1">{a.timeAgo}</p>
                   </div>
                 </button>
               ))}
@@ -1607,9 +1607,9 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2">
                   {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
                 </p>
-                <div className="flex items-center justify-between mt-5 pt-5 border-t border-border font-['Poppins',sans-serif] font-bold">
-                  <span className="text-[9px] text-muted-foreground">{formatAuthorByline(article.author)}</span>
-                  <span className="text-[9px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
+                <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 mt-5 pt-5 border-t border-border font-['Poppins',sans-serif] font-bold article-meta">
+                  <span className="text-muted-foreground">{formatAuthorByline(article.author)}</span>
+                  <span className="text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
                 </div>
               </div>
             </div>
@@ -1641,7 +1641,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
                 {article.title}
               </h3>
-              <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-2">{formatAuthorByline(article.author)} · {article.timeAgo}</p>
+              <p className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground mt-2">{formatAuthorByline(article.author)} · {article.timeAgo}</p>
             </div>
           ))}
         </div>
@@ -1685,7 +1685,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {politicsFeature.title}
                 </h3>
-                <div className="flex items-center gap-2 mt-2 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground">
                   <span>{formatAuthorByline(politicsFeature.author)}</span>
                   <span>·</span>
                   <span>{politicsFeature.timeAgo}</span>
@@ -1707,7 +1707,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                     {politicsSecondFeature.title}
                   </h3>
-                  <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 font-mono article-meta-compact text-muted-foreground">
                     <span>{formatAuthorByline(politicsSecondFeature.author)}</span>
                     <span>Â·</span>
                     <span>{politicsSecondFeature.timeAgo}</span>
@@ -1727,7 +1727,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
-                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
+                    <p className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
                   </button>
                 ))}
               </div>
@@ -1758,7 +1758,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                   {businessFeature.title}
                 </h3>
-                <div className="flex items-center gap-2 mt-2 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground">
                   <span>{formatAuthorByline(businessFeature.author)}</span>
                   <span>·</span>
                   <span>{businessFeature.timeAgo}</span>
@@ -1781,7 +1781,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-lg leading-snug mt-2 group-hover:text-accent transition-colors">
                     {businessSecondFeature.title}
                   </h3>
-                  <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-2 font-mono article-meta-compact text-muted-foreground">
                     <span>{formatAuthorByline(businessSecondFeature.author)}</span>
                     <span>Â·</span>
                     <span>{businessSecondFeature.timeAgo}</span>
@@ -1801,7 +1801,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
-                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
+                    <p className="font-['Poppins',sans-serif] font-bold article-meta-compact text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
                   </button>
                 ))}
               </div>
@@ -2069,7 +2069,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
               {article.title}
             </h1>
             {article.authorAvailable && (
-              <div className="mt-5 flex items-center justify-center gap-3">
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
                 {article.authorAvatar && (
                   <img
                     src={article.authorAvatar}
@@ -2080,7 +2080,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                   />
                 )}
                 <p
-                  className="text-base font-semibold uppercase tracking-[0.12em] text-foreground/85"
+                  className="article-meta font-semibold uppercase tracking-[0.12em] text-foreground/85"
                   style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
                 >
                   {formatAuthorByline(article.author)}
@@ -2113,12 +2113,12 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
 
           {/* Meta */}
           <div className="flex flex-wrap items-center gap-4 py-5 border-y border-border mt-8 mb-8">
-            <div className="flex items-center gap-1 font-mono text-[9px] text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-1 font-mono article-meta-compact text-muted-foreground">
               <Clock size={10} />
               <span>{article.date}</span>
             </div>
             <span className="text-border">·</span>
-            <span className="font-mono text-[10px] text-foreground/70 tracking-widest">{article.readTime}</span>
+            <span className="font-mono article-meta-compact text-foreground/70 tracking-widest">{article.readTime}</span>
             <div className="flex-1" />
             <div className="flex items-center gap-3">
               {[
@@ -2149,9 +2149,9 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             {articleDisplayBlocks.map((block, i) => (
               <div key={i}>
                 {block.type === "gallery" ? (
-                  <div className={`my-8 grid w-full gap-3 sm:gap-4 ${block.images.length === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
+                  <div className={`my-8 mx-auto grid w-fit max-w-full items-start gap-3 sm:gap-4 ${block.images.length === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
                     {block.images.map((image, imageIndex) => (
-                      <figure key={`${image.src}-${imageIndex}`} className="overflow-hidden rounded-md border border-border bg-muted/20">
+                      <figure key={`${image.src}-${imageIndex}`} className="min-w-0 overflow-hidden rounded-md border border-border bg-muted/20">
                         <button
                           type="button"
                           className="block w-full cursor-zoom-in"
@@ -2165,7 +2165,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                             alt={image.alt || article.title}
                             width={image.width}
                             height={image.height}
-                            className="aspect-[4/3] w-full bg-muted/20 object-contain transition-opacity hover:opacity-90"
+                            className="block h-auto w-full max-w-full transition-opacity hover:opacity-90"
                           />
                         </button>
                         {image.caption && (
@@ -2494,7 +2494,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                     <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">
                       {featured.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: featured.subtitleHtml }} /> : featured.subtitle}
                     </p>
-                    <div className="flex items-center gap-3 mt-4 font-mono text-[9px] text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-4 font-mono article-meta text-muted-foreground">
                       <span>{formatAuthorByline(featured.author)}</span>
                       <span>·</span>
                       <span>{featured.timeAgo}</span>
@@ -2643,7 +2643,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                   <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2">
                     {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
                   </p>
-                  <div className="flex items-center gap-3 mt-3 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-3 font-['Poppins',sans-serif] font-bold article-meta text-muted-foreground">
                     <span>{formatAuthorByline(article.author)}</span>
                     <span>·</span>
                     <span>{article.timeAgo}</span>

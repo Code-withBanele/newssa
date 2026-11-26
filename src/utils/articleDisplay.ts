@@ -21,7 +21,7 @@ export function groupAdjacentArticleImages(blocks: ArticleContentBlock[]): Artic
       index += 1;
     }
 
-    if (imageRun.length >= 3) grouped.push({ type: "gallery", images: imageRun });
+    if (imageRun.length >= 2) grouped.push({ type: "gallery", images: imageRun });
     else imageRun.forEach(image => grouped.push({ type: "image", image }));
   }
 

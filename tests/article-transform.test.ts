@@ -88,9 +88,11 @@ const groupedArticleBlocks = groupAdjacentArticleImages([
   ...galleryImages.slice(0, 2),
 ]);
 assert.deepEqual(groupedArticleBlocks.map(block => block.type), [
-  "paragraph", "gallery", "paragraph", "image", "image",
+  "paragraph", "gallery", "paragraph", "gallery",
 ]);
 assert.equal(groupedArticleBlocks[1].type === "gallery" ? groupedArticleBlocks[1].images.length : 0, 4);
+assert.equal(groupedArticleBlocks[3].type === "gallery" ? groupedArticleBlocks[3].images.length : 0, 2);
+assert.equal(groupAdjacentArticleImages([galleryImages[0]]).map(block => block.type).join(","), "image");
 
 const explicitBylinePost = {
   ...post,

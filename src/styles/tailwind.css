@@ -2,3 +2,15 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @import 'tw-animate-css';
+
+@utility article-meta {
+  font-size: clamp(10px, calc(6px + 0.5vw), 14px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+@utility article-meta-compact {
+  font-size: clamp(10px, calc(7px + 0.3vw), 12px);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}

@@ -240,7 +240,9 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
       <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-[clamp(1.35rem,2vw,2.2rem)] leading-[1.08] mt-2 group-hover:text-accent transition-colors break-words max-w-full">
         {article.title}
       </h3>
-      <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
+      <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">
+        {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
+      </p>
       <div className="flex items-center gap-2 mt-3 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-widest uppercase">
         <span>{formatAuthorByline(article.author)}</span>
         <span>·</span>
@@ -1603,7 +1605,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {article.title}
                 </h2>
                 <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2 line-clamp-2">
-                  {article.subtitle}
+                  {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
                 </p>
                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-border font-['Poppins',sans-serif] font-bold">
                   <span className="text-[9px] text-muted-foreground">{formatAuthorByline(article.author)}</span>
@@ -2067,12 +2069,23 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
               {article.title}
             </h1>
             {article.authorAvailable && (
-              <p
-                className="mt-4 text-sm uppercase tracking-[0.18em] text-foreground/75"
-                style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-              >
-                {formatAuthorByline(article.author)}
-              </p>
+              <div className="mt-5 flex items-center justify-center gap-3">
+                {article.authorAvatar && (
+                  <img
+                    src={article.authorAvatar}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                )}
+                <p
+                  className="text-base font-semibold uppercase tracking-[0.12em] text-foreground/85"
+                  style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+                >
+                  {formatAuthorByline(article.author)}
+                </p>
+              </div>
             )}
           </div>
 
@@ -2216,7 +2229,9 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                         className="font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full"
                         style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
                       >
-                        {block.type === "paragraph" ? block.text : ""}
+                        {block.type === "paragraph" && block.html
+                          ? <span dangerouslySetInnerHTML={{ __html: block.html }} />
+                          : block.type === "paragraph" ? block.text : ""}
                       </p>
                     )}
                   </>
@@ -2476,7 +2491,9 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                     <h2 className="font-['Poppins',sans-serif] font-bold text-foreground text-2xl leading-snug mt-2 group-hover:text-accent transition-colors">
                       {featured.title}
                     </h2>
-                    <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">{featured.subtitle}</p>
+                    <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">
+                      {featured.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: featured.subtitleHtml }} /> : featured.subtitle}
+                    </p>
                     <div className="flex items-center gap-3 mt-4 font-mono text-[9px] text-muted-foreground">
                       <span>{formatAuthorByline(featured.author)}</span>
                       <span>·</span>
@@ -2555,10 +2572,11 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
 // ============================================================
 function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) => void }) {
   const [searchInput, setSearchInput] = useState(query);
-  const { results, loading: searchLoading, total } = useSearch(query);
+  const [page, setPage] = useState(1);
+  const { results, loading: searchLoading, total, totalPages } = useSearch(query, undefined, page);
   const { articles: trendingSidebar } = usePosts({ per_page: 5, orderby: "date" }, []);
 
-  useEffect(() => { window.scrollTo(0, 0); setSearchInput(query); }, [query]);
+  useEffect(() => { window.scrollTo(0, 0); setSearchInput(query); setPage(1); }, [query]);
 
   const seo = <SeoHead title={`Search: ${query} | NewsSA`} description={`Search NewsSA for articles about ${query}.`} path="/" robots="noindex, follow" />;
 
@@ -2623,7 +2641,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                     {article.title}
                   </h3>
                   <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-1 line-clamp-2">
-                    {article.subtitle}
+                    {article.subtitleHtml ? <span dangerouslySetInnerHTML={{ __html: article.subtitleHtml }} /> : article.subtitle}
                   </p>
                   <div className="flex items-center gap-3 mt-3 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
                     <span>{formatAuthorByline(article.author)}</span>
@@ -2660,6 +2678,29 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
               />
             ))}
           </aside>
+          {totalPages > 1 && (
+            <nav aria-label="Search result pages" className="mt-8 flex items-center justify-center gap-4 lg:col-span-2">
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.max(1, current - 1))}
+                disabled={page <= 1 || searchLoading}
+                className="border border-border px-4 py-2 font-mono text-[9px] tracking-widest uppercase disabled:opacity-40 hover:bg-secondary transition-colors"
+              >
+                Previous
+              </button>
+              <span className="font-mono text-[9px] tracking-widest uppercase text-muted-foreground">
+                Page {page} of {totalPages}
+              </span>
+              <button
+                type="button"
+                onClick={() => setPage(current => Math.min(totalPages, current + 1))}
+                disabled={page >= totalPages || searchLoading}
+                className="border border-border px-4 py-2 font-mono text-[9px] tracking-widest uppercase disabled:opacity-40 hover:bg-secondary transition-colors"
+              >
+                Next
+              </button>
+            </nav>
+          )}
         </div>
       )}
     </main>

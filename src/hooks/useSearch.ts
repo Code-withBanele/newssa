@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { fetchPosts } from "../api/posts";
 import { transformPosts, Article } from "../utils/transform";
 
@@ -7,6 +7,7 @@ interface UseSearchState {
   loading: boolean;
   error: string | null;
   total: number;
+  totalPages: number;
 }
 
 export function useSearch(query: string, categoryIds?: number[], page = 1): UseSearchState {
@@ -15,24 +16,18 @@ export function useSearch(query: string, categoryIds?: number[], page = 1): UseS
     loading: false,
     error: null,
     total: 0,
+    totalPages: 1,
   });
-
-  // Debounce to avoid hammering WP on every keystroke
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!query.trim()) {
-      setState({ results: [], loading: false, error: null, total: 0 });
+      setState({ results: [], loading: false, error: null, total: 0, totalPages: 1 });
       return;
     }
 
-    setState(s => ({ ...s, loading: true, error: null }));
-
-    if (timerRef.current) clearTimeout(timerRef.current);
-
-    timerRef.current = setTimeout(() => {
-      let cancelled = false;
-
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setState(current => ({ ...current, loading: true, error: null }));
       fetchPosts({
         search: query.trim(),
         categories: categoryIds,
@@ -47,18 +42,18 @@ export function useSearch(query: string, categoryIds?: number[], page = 1): UseS
             loading: false,
             error: null,
             total: pagination.total,
+            totalPages: pagination.totalPages,
           });
         })
         .catch((err: Error) => {
           if (cancelled) return;
-          setState({ results: [], loading: false, error: err.message, total: 0 });
+          setState({ results: [], loading: false, error: err.message, total: 0, totalPages: 1 });
         });
-
-      return () => { cancelled = true; };
     }, 300);
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      cancelled = true;
+      clearTimeout(timer);
     };
   }, [query, categoryIds?.join(","), page]);
 

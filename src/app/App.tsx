@@ -42,6 +42,26 @@ import sowetaImg from "@/imports/Body/cac906114b2abd100defababcde8e853ee603ace.p
 import homePage1Img from "@/imports/Body/ccb9a0a56ff2339b740b103f0edfb47b2de0cdf9.png";
 import nwMediaAwardsAd from "@/imports/Body/1.png";
 const logoImg = "/newssa-logo.png";
+const SOCIAL_LINKS = [
+  { icon: Twitter, label: "X", href: "https://x.com/NewsSA_Online" },
+  { icon: Facebook, label: "Facebook", href: "https://www.facebook.com/profile.php?id=61573945540538" },
+  { icon: Instagram, label: "Instagram", href: "https://www.instagram.com/newssa_online/" },
+];
+
+function formatAuthorByline(author: string): string {
+  const name = author.trim().replace(/^by\s*:?\s*/i, "");
+  return name ? `BY: ${name}` : "";
+}
+
+function articleImageFigureClass(image: ArticleImage): string {
+  const width = image.alignment === "wide" || image.alignment === "full" ? "w-full" : "w-fit";
+  const alignment = image.alignment === "left"
+    ? "mr-auto"
+    : image.alignment === "right"
+      ? "ml-auto"
+      : "mx-auto";
+  return `${width} max-w-full ${alignment}`;
+}
 
 // --- Types ---
 type Page =
@@ -194,7 +214,7 @@ function ArticleCardLarge({ article, onClick }: { article: Article; onClick: () 
             {article.title}
           </h2>
           <div className="flex items-center gap-4 mt-4 text-white/60 font-['Poppins',sans-serif] font-bold text-[9px] tracking-widest uppercase">
-            <span>{article.author}</span>
+            <span>{formatAuthorByline(article.author)}</span>
             <span>·</span>
             <span>{article.timeAgo}</span>
             <span>·</span>
@@ -222,7 +242,7 @@ function ArticleCardMedium({ article, onClick }: { article: Article; onClick: ()
       </h3>
       <p className="font-['Inter',sans-serif] font-medium text-foreground/75 text-sm leading-relaxed mt-2 line-clamp-2">{article.subtitle}</p>
       <div className="flex items-center gap-2 mt-3 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-widest uppercase">
-        <span>{article.author}</span>
+        <span>{formatAuthorByline(article.author)}</span>
         <span>·</span>
         <span>{article.timeAgo}</span>
       </div>
@@ -276,7 +296,7 @@ function ArticleCardHorizontal({ article, onClick }: { article: Article; onClick
           {article.title}
         </h4>
         <div className="flex items-center gap-2 mt-2 text-foreground/65 font-['Poppins',sans-serif] font-bold text-[10px] tracking-wider uppercase">
-          <span>{article.author}</span>
+          <span>{formatAuthorByline(article.author)}</span>
           <span>·</span>
           <span>{article.readTime}</span>
         </div>
@@ -336,7 +356,7 @@ function SearchResultCard({ article, query, onClick }: {
         <p className="font-['Inter',sans-serif] font-medium text-foreground/70 text-[12px] leading-relaxed mt-0.5 line-clamp-1">
           {highlightText(article.subtitle, query)}
         </p>
-        <p className="font-['Poppins',sans-serif] font-bold text-[8px] text-muted-foreground mt-1">{article.author}</p>
+        <p className="font-['Poppins',sans-serif] font-bold text-[8px] text-muted-foreground mt-1">{formatAuthorByline(article.author)}</p>
       </div>
     </button>
   );
@@ -1368,16 +1388,10 @@ function Footer({ navigate }: { navigate: (p: Page) => void }) {
         <div className="relative z-10">
           <p className="font-mono text-[20px] tracking-[0.2em] uppercase text-white/40 mb-4">Follow Us</p>
           <div className="flex gap-4 mb-6">
-            {[
-             { icon: Twitter, label: "Twitter" , href : "https://x.com/NewsSA_Online" },
-              { icon: Facebook, label: "Facebook", href : "https://www.facebook.com/profile.php?id=61573945540538" },
-              { icon: Instagram, label: "Instagram", href : "https://l.facebook.com/l.php?u=https%3A%2F%2Fwww.instagram.com%2Fnewssa_online%3Ffbclid%3DIwcGRvZgVleHRuA2FlbQIxMABicmlkETF5RlJVWVI0aDZJYk9hd0ljc3J0YwZhcHBfaWQQMjIyMDM5MTc4ODIwMDg5MgABHuaOKm4LqthAZ3vzbcWvAi-b7bSluhrl7YRPFee2ma089SBoYbxih9RnlWsd_aem_Jix1SZK2WJ2pnykkobgrTg&h=AUBMo79nfKvj8RLL7qyVFE9D-bangfr5DK1IC9W5UIUWCCoCCNgU-r7k_TxuCw193ToHGQ97VTBu75G8QfqJ-I79Cc2R-L4hI-8UPL7eH3EmP5U_AnrQCfCpktC4Hrjq5nEA" },
-              
-            
-            ].map(({ icon: Icon, label, href }) => (
-              <button key={label} aria-label={label} className="text-white/40 hover:text-white transition-colors" onClick={() => window.open(href, "_blank")}     >
+            {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
+              <a key={label} aria-label={label} href={href} target="_blank" rel="noopener noreferrer" className="text-white/40 hover:text-white transition-colors">
                 <Icon size={25} />
-              </button>
+              </a>
             ))}
           </div>
           <div className="flex flex-col items-start gap-3 mb-2">
@@ -1527,7 +1541,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                 {hero.title}
               </h1>
               <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 font-['Poppins',sans-serif] font-bold text-[9px] uppercase tracking-widest text-muted-foreground">
-                <span>{hero.author}</span>
+                <span>{formatAuthorByline(hero.author)}</span>
                 <span>&middot;</span>
                 <span>{hero.timeAgo}</span>
                 <span>&middot;</span>
@@ -1592,7 +1606,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {article.subtitle}
                 </p>
                 <div className="flex items-center justify-between mt-5 pt-5 border-t border-border font-['Poppins',sans-serif] font-bold">
-                  <span className="text-[9px] text-muted-foreground">{article.author}</span>
+                  <span className="text-[9px] text-muted-foreground">{formatAuthorByline(article.author)}</span>
                   <span className="text-[9px] text-muted-foreground">{article.timeAgo} · {article.readTime}</span>
                 </div>
               </div>
@@ -1625,7 +1639,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
               <h3 className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-2 group-hover:text-accent transition-colors">
                 {article.title}
               </h3>
-              <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-2">{article.author} · {article.timeAgo}</p>
+              <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-2">{formatAuthorByline(article.author)} · {article.timeAgo}</p>
             </div>
           ))}
         </div>
@@ -1670,7 +1684,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {politicsFeature.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
-                  <span>{politicsFeature.author}</span>
+                  <span>{formatAuthorByline(politicsFeature.author)}</span>
                   <span>·</span>
                   <span>{politicsFeature.timeAgo}</span>
                 </div>
@@ -1692,7 +1706,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     {politicsSecondFeature.title}
                   </h3>
                   <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
-                    <span>{politicsSecondFeature.author}</span>
+                    <span>{formatAuthorByline(politicsSecondFeature.author)}</span>
                     <span>Â·</span>
                     <span>{politicsSecondFeature.timeAgo}</span>
                   </div>
@@ -1711,7 +1725,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
-                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
+                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
                   </button>
                 ))}
               </div>
@@ -1743,7 +1757,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                   {businessFeature.title}
                 </h3>
                 <div className="flex items-center gap-2 mt-2 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
-                  <span>{businessFeature.author}</span>
+                  <span>{formatAuthorByline(businessFeature.author)}</span>
                   <span>·</span>
                   <span>{businessFeature.timeAgo}</span>
                 </div>
@@ -1766,7 +1780,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     {businessSecondFeature.title}
                   </h3>
                   <div className="flex items-center gap-2 mt-2 font-mono text-[9px] text-muted-foreground">
-                    <span>{businessSecondFeature.author}</span>
+                    <span>{formatAuthorByline(businessSecondFeature.author)}</span>
                     <span>Â·</span>
                     <span>{businessSecondFeature.timeAgo}</span>
                   </div>
@@ -1785,7 +1799,7 @@ function HomePage({ navigate }: { navigate: (p: Page) => void }) {
                     <p className="font-['Poppins',sans-serif] font-bold text-foreground text-sm leading-snug mt-1.5 hover:text-accent transition-colors">
                       {a.title}
                     </p>
-                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{a.author} · {a.timeAgo}</p>
+                    <p className="font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground mt-1">{formatAuthorByline(a.author)} · {a.timeAgo}</p>
                   </button>
                 ))}
               </div>
@@ -1966,8 +1980,6 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
       .filter(block => block.type !== "paragraph" || !isAuthorByline(block.text ?? ""))
     : [];
   const articleDisplayBlocks = groupAdjacentArticleImages(articleBodyBlocks);
-  const leadingArticleImageIndex = articleDisplayBlocks.findIndex(block => block.type === "image");
-  const leadingArticleImage = articleDisplayBlocks[leadingArticleImageIndex];
   const seo = <SeoHead
     title={article ? `${article.title} | NewsSA` : "Article | NewsSA"}
     description={article?.subtitle || "Read the latest independent news from News South Africa."}
@@ -2002,7 +2014,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(title)}&url=${encodeURIComponent(url)}`,
       facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
-      email: `mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`,
+      email: `mailto:news@newssa.co.za?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(url)}`,
     };
     if (platform === "email") {
       window.location.assign(destinations.email);
@@ -2045,28 +2057,6 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
             </button>
           </div>
 
-          {leadingArticleImage?.type === "image" && leadingArticleImage.image && (
-            <figure className="mb-8 overflow-hidden rounded-md border border-border bg-muted/20">
-              <button
-                type="button"
-                className="block w-full cursor-zoom-in"
-                onClick={() => leadingArticleImage.image && setImageViewer({ images: [leadingArticleImage.image], index: 0 })}
-                aria-label="View image full screen"
-              >
-                <img
-                  src={leadingArticleImage.image.src}
-                  alt={leadingArticleImage.image.alt || article.title}
-                  className="w-full h-auto max-h-[1000px] object-cover"
-                />
-              </button>
-              {leadingArticleImage.image.caption && (
-                <figcaption className="px-4 py-3 font-mono text-[9px] tracking-[0.18em] uppercase text-muted-foreground">
-                  {leadingArticleImage.image.caption}
-                </figcaption>
-              )}
-            </figure>
-          )}
-
                   {/* Category + centered headline + author */}
           <div className="text-center">
             <CategoryBadge category={article.category} />
@@ -2081,18 +2071,30 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                 className="mt-4 text-sm uppercase tracking-[0.18em] text-foreground/75"
                 style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
               >
-                {article.author}
+                {formatAuthorByline(article.author)}
               </p>
             )}
           </div>
 
           {/* Hero image */}
-          <div className="mt-8 mb-8 overflow-hidden">
-            <img src={article.image} alt={article.imageAlt || article.title} className="mx-auto max-h-[70vh] w-full object-contain" />
-            <p className="font-mono text-[8px] text-muted-foreground/60 mt-2 tracking-wider">
-              Image: News South Africa / Associated Press
-            </p>
-          </div>
+          {article.hasFeaturedImage && (
+            <div className="mt-8 mb-8 overflow-hidden">
+              <img
+                src={article.image}
+                srcSet={article.images[0]?.srcSet}
+                sizes={article.images[0]?.sizes}
+                alt={article.imageAlt || article.title}
+                width={article.images[0]?.width}
+                height={article.images[0]?.height}
+                className="mx-auto max-h-[70vh] w-full object-contain"
+              />
+              {article.images[0]?.caption && (
+                <p className="mt-2 font-['IBM_Plex_Sans',sans-serif] text-sm leading-relaxed text-muted-foreground">
+                  {article.images[0].caption}
+                </p>
+              )}
+            </div>
+          )}
 
          
 
@@ -2132,7 +2134,6 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
           {/* Body */}
           <div className="prose-custom max-w-none">
             {articleDisplayBlocks.map((block, i) => (
-              i === leadingArticleImageIndex ? null : (
               <div key={i}>
                 {block.type === "gallery" ? (
                   <div className={`my-8 grid w-full gap-3 sm:gap-4 ${block.images.length === 3 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" : "grid-cols-2"}`}>
@@ -2146,7 +2147,11 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                         >
                           <img
                             src={image.src}
+                            srcSet={image.srcSet}
+                            sizes={image.sizes}
                             alt={image.alt || article.title}
+                            width={image.width}
+                            height={image.height}
                             className="aspect-[4/3] w-full bg-muted/20 object-contain transition-opacity hover:opacity-90"
                           />
                         </button>
@@ -2159,7 +2164,7 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                     ))}
                   </div>
                 ) : block.type === "image" && block.image ? (
-                  <figure className="my-8 overflow-hidden rounded-md border border-border bg-muted/20">
+                  <figure className={`my-8 overflow-hidden rounded-md border border-border bg-muted/20 ${articleImageFigureClass(block.image)}`}>
                     <button
                       type="button"
                       className="block w-full cursor-zoom-in"
@@ -2168,8 +2173,12 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                     >
                       <img
                         src={block.image.src}
+                        srcSet={block.image.srcSet}
+                        sizes={block.image.sizes}
                         alt={block.image.alt || article.title}
-                        className="w-full h-auto max-h-[1000px] object-cover"
+                        width={block.image.width}
+                        height={block.image.height}
+                        className="block h-auto max-h-[1000px] w-full max-w-full object-contain"
                       />
                     </button>
                     {block.image.caption && (
@@ -2187,16 +2196,32 @@ function ArticlePage({ route, navigate, user, onRequireLogin }: { route: Article
                         </p>
                       </blockquote>
                     )}
-                    <p
-                      className="font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full"
-                      style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
-                    >
-                      {block.type === "paragraph" ? block.text : ""}
-                    </p>
+                    {block.type === "paragraph" && /^X\s+Facebook\s+Mail$/i.test((block.text ?? "").trim()) ? (
+                      <div className="flex gap-3 mb-5">
+                        {SOCIAL_LINKS.map(({ icon: Icon, label, href }) => (
+                          <a
+                            key={label}
+                            href={href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`Follow NEWSSA on ${label}`}
+                            className="bg-secondary text-foreground px-4 py-2 flex items-center gap-2 font-mono text-[10px] font-bold tracking-widest uppercase transition-all duration-200 hover:scale-105 hover:bg-red-600 hover:text-white"
+                          >
+                            <Icon size={18} /> {label}
+                          </a>
+                        ))}
+                      </div>
+                    ) : (
+                      <p
+                        className="font-medium text-foreground/90 text-[clamp(1rem,1.6vw,1.12rem)] leading-[1.9] mb-5 break-words max-w-full"
+                        style={{ fontFamily: '"IBM Plex Sans", sans-serif' }}
+                      >
+                        {block.type === "paragraph" ? block.text : ""}
+                      </p>
+                    )}
                   </>
                 )}
               </div>
-              )
             ))}
           </div>
 
@@ -2453,7 +2478,7 @@ function CategoryPage({ name, navigate }: { name: string; navigate: (p: Page) =>
                     </h2>
                     <p className="font-['Inter',sans-serif] text-muted-foreground text-sm mt-2">{featured.subtitle}</p>
                     <div className="flex items-center gap-3 mt-4 font-mono text-[9px] text-muted-foreground">
-                      <span>{featured.author}</span>
+                      <span>{formatAuthorByline(featured.author)}</span>
                       <span>·</span>
                       <span>{featured.timeAgo}</span>
                       <span>·</span>
@@ -2601,7 +2626,7 @@ function SearchPage({ query, navigate }: { query: string; navigate: (p: Page) =>
                     {article.subtitle}
                   </p>
                   <div className="flex items-center gap-3 mt-3 font-['Poppins',sans-serif] font-bold text-[9px] text-muted-foreground">
-                    <span>{article.author}</span>
+                    <span>{formatAuthorByline(article.author)}</span>
                     <span>·</span>
                     <span>{article.timeAgo}</span>
                     <span>·</span>

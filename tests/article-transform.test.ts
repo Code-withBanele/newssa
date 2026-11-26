@@ -206,8 +206,91 @@ const repeatedFeaturedPost = {
 
 const repeatedFeaturedArticle = transformPost(repeatedFeaturedPost as any);
 assert.equal(repeatedFeaturedArticle.image, "https://example.com/cover-large.jpg");
+assert.equal(repeatedFeaturedArticle.images[0].caption, "Featured caption");
 assert.deepEqual(repeatedFeaturedArticle.content.map(item => item.type), ["paragraph"]);
 assert.equal(repeatedFeaturedArticle.content[0].text, "Body paragraph after the cover image.");
+
+const duplicateCaptionPost = {
+  ...repeatedFeaturedPost,
+  _embedded: {
+    ...repeatedFeaturedPost._embedded,
+    "wp:featuredmedia": [{
+      ...repeatedFeaturedPost._embedded["wp:featuredmedia"][0],
+      caption: { rendered: "News SA Correspondent" },
+    }],
+  },
+};
+const duplicateCaptionArticle = transformPost(duplicateCaptionPost as any);
+assert.equal(duplicateCaptionArticle.images[0].caption, "Featured caption");
+
+const alignedImagePost = {
+  ...post,
+  content: {
+    rendered: `
+      <p>Paragraph before the image.</p>
+      <figure class="wp-block-image alignright size-large">
+        <img
+          src="https://example.com/aligned.jpg"
+          srcset="https://example.com/aligned-small.jpg 320w, https://example.com/aligned.jpg 640w"
+          sizes="(max-width: 640px) 100vw, 640px"
+          alt="Aligned image"
+          width="640"
+          height="360"
+        />
+        <figcaption>Actual inline caption</figcaption>
+      </figure>
+      <p>Paragraph after the image.</p>
+    `,
+  },
+};
+const alignedImageArticle = transformPost(alignedImagePost as any);
+assert.deepEqual(alignedImageArticle.content.map(item => item.type), ["paragraph", "image", "paragraph"]);
+assert.equal(alignedImageArticle.content[1].image?.alignment, "right");
+assert.equal(alignedImageArticle.content[1].image?.width, 640);
+assert.equal(alignedImageArticle.content[1].image?.height, 360);
+assert.equal(alignedImageArticle.content[1].image?.caption, "Actual inline caption");
+assert.equal(
+  alignedImageArticle.content[1].image?.srcSet,
+  "https://example.com/aligned-small.jpg 320w, https://example.com/aligned.jpg 640w",
+);
+assert.equal(alignedImageArticle.content[1].image?.sizes, "(max-width: 640px) 100vw, 640px");
+
+const classicCaptionPost = {
+  ...post,
+  content: {
+    rendered: `
+      <p>Before captioned image.</p>
+      <div class="wp-caption alignnone">
+        <img src="https://example.com/classic-caption.jpg" alt="Classic image" width="640" height="360" />
+        <p class="wp-caption-text">Classic WordPress caption</p>
+      </div>
+      <p>After captioned image.</p>
+    `,
+  },
+};
+const classicCaptionArticle = transformPost(classicCaptionPost as any);
+assert.deepEqual(classicCaptionArticle.content.map(item => item.type), ["paragraph", "image", "paragraph"]);
+assert.equal(classicCaptionArticle.content[1].image?.caption, "Classic WordPress caption");
+
+const inlineOnlyPost = {
+  ...post,
+  featured_media: 0,
+  _embedded: {
+    ...post._embedded,
+    "wp:featuredmedia": [],
+  },
+  content: {
+    rendered: `
+      <p>Opening paragraph.</p>
+      <img src="https://example.com/inline-only.jpg" alt="Inline-only image" width="500" height="300" />
+      <p>Closing paragraph.</p>
+    `,
+  },
+};
+const inlineOnlyArticle = transformPost(inlineOnlyPost as any);
+assert.equal(inlineOnlyArticle.hasFeaturedImage, false);
+assert.equal(inlineOnlyArticle.image, "https://example.com/inline-only.jpg");
+assert.deepEqual(inlineOnlyArticle.content.map(item => item.type), ["paragraph", "image", "paragraph"]);
 
 const sizeVariantFeaturedPost = {
   ...post,

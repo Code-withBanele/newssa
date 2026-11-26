@@ -44,7 +44,7 @@ export interface WPMedia {
   media_details?: {
     width: number;
     height: number;
-    sizes?: Record<string, { source_url: string }>;
+    sizes?: Record<string, { source_url: string; width?: number; height?: number }>;
   };
 }
 

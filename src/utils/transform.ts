@@ -6,6 +6,9 @@ export interface ArticleImage {
   caption?: string;
   width?: number;
   height?: number;
+  srcSet?: string;
+  sizes?: string;
+  alignment?: "left" | "center" | "right" | "wide" | "full";
 }
 
 export interface ArticleContentBlock {
@@ -30,6 +33,7 @@ export interface Article {
   readTime: string;   // Estimated from word count
   image: string;      // Best available featured image URL
   imageAlt: string;
+  hasFeaturedImage: boolean;
   images: ArticleImage[];
   content: ArticleContentBlock[];
   body: string[];     // Paragraphs split from rendered content
@@ -122,6 +126,14 @@ function safeText(value: string | null | undefined): string {
   return stripHtml(value ?? "");
 }
 
+function extractImageCaption(html: string): string | undefined {
+  const caption =
+    html.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i)?.[1]
+    ?? html.match(/<p\b[^>]*\b(?:wp-caption-text|wp-element-caption)\b[^>]*>([\s\S]*?)<\/p>/i)?.[1]
+    ?? html.match(/<div\b[^>]*\b(?:wp-caption-text|wp-element-caption)\b[^>]*>([\s\S]*?)<\/div>/i)?.[1];
+  return safeText(caption) || undefined;
+}
+
 export function isAuthorByline(text: string): boolean {
   return /^by\s+[^:]{1,100}\s*:\s*$/iu.test(text.trim());
 }
@@ -139,26 +151,84 @@ function getAttribute(tag: string, name: string): string {
   return (match[1] ?? match[2] ?? match[3] ?? "").trim();
 }
 
-function imageFromTag(tag: string, fallbackAlt = ""): ArticleImage | null {
+function positiveDimension(value: string): number | undefined {
+  const dimension = Number.parseInt(value, 10);
+  return Number.isFinite(dimension) && dimension > 0 ? dimension : undefined;
+}
+
+function getStyleDimension(style: string, property: "width" | "height"): number | undefined {
+  const value = style.match(new RegExp(`(?:^|;)\\s*${property}\\s*:\\s*(\\d+(?:\\.\\d+)?)px`, "i"))?.[1];
+  return value ? positiveDimension(value) : undefined;
+}
+
+function normalizeSrcSet(value: string): string | undefined {
+  const sources = value.split(",").flatMap(candidate => {
+    const [url, descriptor] = candidate.trim().split(/\s+/, 2);
+    const normalizedUrl = normalizeImageUrl(url);
+    if (!normalizedUrl || (descriptor && !/^\d+(?:\.\d+)?[wx]$/i.test(descriptor))) return [];
+    return [`${normalizedUrl}${descriptor ? ` ${descriptor}` : ""}`];
+  });
+  return sources.length ? sources.join(", ") : undefined;
+}
+
+function getImageAlignment(...metadata: string[]): ArticleImage["alignment"] {
+  const value = metadata.join(" ").toLowerCase();
+  const classMatch = value.match(/(?:^|\s)align(left|center|right|wide|full)(?=\s|$)/);
+  if (classMatch) return classMatch[1] as ArticleImage["alignment"];
+
+  const styleMatch = value.match(/(?:text-align|float)\s*:\s*(left|center|right)\b/);
+  if (styleMatch) return styleMatch[1] as ArticleImage["alignment"];
+
+  const explicitAlignment = metadata.find(item => /^(left|center|right|wide|full)$/i.test(item.trim()));
+  if (explicitAlignment) return explicitAlignment.toLowerCase() as ArticleImage["alignment"];
+
+  return undefined;
+}
+
+function imageFromTag(tag: string, fallbackAlt = "", figureTag = ""): ArticleImage | null {
   const src = normalizeImageUrl(getAttribute(tag, "src") || getAttribute(tag, "data-src") || getAttribute(tag, "data-lazy-src"));
   if (!src) return null;
 
+  const style = getAttribute(tag, "style");
+  const figureStyle = getAttribute(figureTag, "style");
+  const width = positiveDimension(getAttribute(tag, "width"))
+    ?? getStyleDimension(style, "width")
+    ?? getStyleDimension(figureStyle, "width");
+  const height = positiveDimension(getAttribute(tag, "height"))
+    ?? getStyleDimension(style, "height")
+    ?? getStyleDimension(figureStyle, "height");
+  const alignment = getImageAlignment(
+    getAttribute(figureTag, "class"),
+    getAttribute(figureTag, "align"),
+    getAttribute(figureTag, "data-align"),
+    getAttribute(figureTag, "style"),
+    getAttribute(tag, "class"),
+    getAttribute(tag, "align"),
+    getAttribute(tag, "data-align"),
+    style,
+  );
+  const srcSet = normalizeSrcSet(getAttribute(tag, "srcset"));
+  const sizes = getAttribute(tag, "sizes") || undefined;
   return {
     src,
     alt: safeText(getAttribute(tag, "alt") || fallbackAlt),
+    ...(width ? { width } : {}),
+    ...(height ? { height } : {}),
+    ...(srcSet ? { srcSet } : {}),
+    ...(sizes ? { sizes } : {}),
+    ...(alignment ? { alignment } : {}),
   };
 }
 
 function collectArticleImages(post: WPPost): ArticleImage[] {
   const featured = post._embedded?.["wp:featuredmedia"]?.[0] as WPMedia | undefined;
-  const featuredUrl = featured ? (() => {
-    const sizes = featured.media_details?.sizes;
-    if (sizes) {
-      const selected = sizes["medium_large"] ?? sizes["large"] ?? sizes["medium"] ?? sizes["thumbnail"];
-      if (selected?.source_url) return selected.source_url;
-    }
-    return featured.source_url ?? "";
-  })() : "";
+  const featuredSizes = featured?.media_details?.sizes;
+  const featuredSize = featuredSizes?.["medium_large"] ?? featuredSizes?.["large"] ?? featuredSizes?.["medium"] ?? featuredSizes?.["thumbnail"];
+  const featuredUrl = featuredSize?.source_url ?? featured?.source_url ?? "";
+  const featuredSrcSet = normalizeSrcSet(Object.values(featuredSizes ?? {})
+    .filter(size => size.source_url && size.width)
+    .map(size => `${size.source_url} ${size.width}w`)
+    .join(", "));
 
   const images: ArticleImage[] = [];
   const seen = new Set<string>();
@@ -166,37 +236,48 @@ function collectArticleImages(post: WPPost): ArticleImage[] {
   const addImage = (image: ArticleImage | null) => {
     if (!image || !image.src) return;
     const normalized = canonicalImageKey(image.src);
-    if (!normalized || seen.has(normalized)) return;
+    if (!normalized) return;
+    if (seen.has(normalized)) {
+      const existing = images.find(item => canonicalImageKey(item.src) === normalized);
+      if (existing && image.caption) {
+        existing.caption = image.caption;
+      }
+      if (existing) {
+        existing.width ??= image.width;
+        existing.height ??= image.height;
+        existing.alignment ??= image.alignment;
+      }
+      return;
+    }
     seen.add(normalized);
     images.push({ ...image, alt: image.alt || "Article image" });
   };
 
-  addImage(featured ? { src: featuredUrl, alt: featured.alt_text || stripHtml(post.title.rendered), caption: safeText(featured.caption?.rendered) } : null);
-
   const contentHtml = post.content?.rendered ?? "";
-  const figureMatches = [...contentHtml.matchAll(/<figure\b[^>]*>([\s\S]*?)<\/figure>/gi)];
-  for (const match of figureMatches) {
-    const figureHtml = match[0];
-    const imgMatch = figureHtml.match(/<img\b[^>]*>/i);
-    if (!imgMatch) continue;
-    const imgTag = imgMatch[0];
-    const caption = safeText((figureHtml.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i)?.[1] ?? ""));
+  const fallbackAlt = featured?.alt_text || stripHtml(post.title.rendered);
+  const imageMatches = [...contentHtml.matchAll(/<(?:figure\b[^>]*>[\s\S]*?<\/figure>|div\b[^>]*\bwp-caption\b[^>]*>[\s\S]*?<\/div>|dl\b[^>]*\bwp-caption\b[^>]*>[\s\S]*?<\/dl>|img\b[^>]*>)/gi)];
+
+  addImage(featured ? {
+    src: featuredUrl,
+    alt: featured.alt_text || stripHtml(post.title.rendered),
+    caption: safeText(featured.caption?.rendered) || undefined,
+    width: featuredSize?.width ?? featured.media_details?.width,
+    height: featuredSize?.height ?? featured.media_details?.height,
+    srcSet: featuredSrcSet,
+    sizes: featuredSrcSet ? "(min-width: 1024px) 65vw, 100vw" : undefined,
+  } : null);
+
+  for (const match of imageMatches) {
+    const matchedHtml = match[0];
+    const figureTag = matchedHtml.match(/^<figure\b[^>]*>/i)?.[0] ?? "";
+    const imageTag = matchedHtml.match(/<img\b[^>]*>/i)?.[0] ?? "";
+    if (!imageTag) continue;
+
+    const caption = extractImageCaption(matchedHtml);
     addImage({
-      ...imageFromTag(imgTag, featured?.alt_text || stripHtml(post.title.rendered)),
+      ...imageFromTag(imageTag, fallbackAlt, figureTag),
       caption: caption || undefined,
     });
-  }
-
-  const standaloneMatches = [...contentHtml.matchAll(/<img\b[^>]*>/gi)];
-  for (const match of standaloneMatches) {
-    const tag = match[0];
-    const isWithinFigure = figureMatches.some(figure => {
-      const start = figure.index ?? 0;
-      const end = start + figure[0].length;
-      return (match.index ?? 0) >= start && (match.index ?? 0) < end;
-    });
-    if (isWithinFigure) continue;
-    addImage(imageFromTag(tag, featured?.alt_text || stripHtml(post.title.rendered)));
   }
 
   return images;
@@ -238,11 +319,11 @@ function appendParagraphBlocks(blocks: ArticleContentBlock[], html: string): voi
   if (trailingText) blocks.push({ type: "paragraph", text: trailingText });
 }
 
-function buildContentBlocks(html: string, images: ArticleImage[]): ArticleContentBlock[] {
+function buildContentBlocks(html: string, images: ArticleImage[], featuredImageUrl: string): ArticleContentBlock[] {
   const blocks: ArticleContentBlock[] = [];
   const contentHtml = html ?? "";
-  const imageMatches = [...contentHtml.matchAll(/<figure\b[^>]*>[\s\S]*?<\/figure>|<img\b[^>]*>/gi)];
-  const featuredImageKey = canonicalImageKey(images[0]?.src ?? "");
+  const imageMatches = [...contentHtml.matchAll(/<(?:figure\b[^>]*>[\s\S]*?<\/figure>|div\b[^>]*\bwp-caption\b[^>]*>[\s\S]*?<\/div>|dl\b[^>]*\bwp-caption\b[^>]*>[\s\S]*?<\/dl>|img\b[^>]*>)/gi)];
+  const featuredImageKey = canonicalImageKey(featuredImageUrl);
   const seenImageKeys = new Set<string>();
   let lastIndex = 0;
 
@@ -256,11 +337,17 @@ function buildContentBlocks(html: string, images: ArticleImage[]): ArticleConten
     let imageDef: ArticleImage | null = null;
     if (figureMatch) {
       const figureHtml = figureMatch[0];
+      const figureTag = figureHtml.match(/^<figure\b[^>]*>/i)?.[0] ?? "";
       const imgTag = figureHtml.match(/<img\b[^>]*>/i)?.[0];
-      const caption = safeText(figureHtml.match(/<figcaption\b[^>]*>([\s\S]*?)<\/figcaption>/i)?.[1] ?? "");
-      imageDef = imgTag ? { ...imageFromTag(imgTag)!, caption: caption || undefined } : null;
+      const caption = extractImageCaption(figureHtml);
+      imageDef = imgTag
+        ? { ...imageFromTag(imgTag, "", figureTag)!, caption: caption || undefined }
+        : null;
     } else {
-      imageDef = imageFromTag(matchedHtml);
+      const standaloneImage = imageFromTag(matchedHtml);
+      imageDef = standaloneImage
+        ? { ...standaloneImage, caption: extractImageCaption(matchedHtml) }
+        : null;
     }
 
     if (imageDef) {
@@ -271,7 +358,10 @@ function buildContentBlocks(html: string, images: ArticleImage[]): ArticleConten
       }
 
       seenImageKeys.add(key);
-      const image = images.find(item => canonicalImageKey(item.src) === key) ?? imageDef;
+      const collectedImage = images.find(item => canonicalImageKey(item.src) === key);
+      const image = collectedImage
+        ? { ...collectedImage, ...imageDef, caption: imageDef.caption || collectedImage.caption }
+        : imageDef;
       blocks.push({ type: "image", image });
     }
 
@@ -349,7 +439,9 @@ function extractPullQuote(paragraphs: string[]): string | undefined {
 export function transformPost(post: WPPost): Article {
   const images = collectArticleImages(post);
   const articleHtml = removeAuthorBylineBlocks(post.content.rendered);
-  const content = buildContentBlocks(articleHtml, images)
+  const featuredImageUrl = getFeaturedImageUrl(post);
+  const hasFeaturedImage = Boolean(canonicalImageKey(featuredImageUrl));
+  const content = buildContentBlocks(articleHtml, images, featuredImageUrl)
     .filter(block => block.type !== "paragraph" || !isAuthorByline(block.text ?? ""));
   const paragraphs = content
     .filter(block => block.type === "paragraph" && block.text)
@@ -358,7 +450,7 @@ export function transformPost(post: WPPost): Article {
   const body = paragraphs.length > 0 ? paragraphs : splitIntoParagraphs(articleHtml);
   const plainBody = body.join(" ");
   const author = getAuthorName(post);
-  const featuredImage = images[0]?.src || getFeaturedImageUrl(post) || "";
+  const featuredImage = featuredImageUrl || images[0]?.src || "";
 
   return {
     id: post.id,
@@ -374,7 +466,8 @@ export function transformPost(post: WPPost): Article {
     timeAgo: timeAgo(post.date),
     readTime: estimateReadTime(plainBody),
     image: featuredImage,
-    imageAlt: getFeaturedImageAlt(post),
+    imageAlt: hasFeaturedImage ? getFeaturedImageAlt(post) : images[0]?.alt || stripHtml(post.title.rendered),
+    hasFeaturedImage,
     images,
     content,
     body,
